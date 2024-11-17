@@ -20,7 +20,15 @@ add_library(lib STATIC memdb-lib/memdb-lib.h
         memdb-lib/Parser/LexemeParser.cpp
         memdb-lib/Parser/LexemeParser.h
         memdb-lib/Parser/Lexeme.cpp
-        memdb-lib/Parser/Lexeme.h)
+        memdb-lib/Parser/Lexeme.h
+        memdb-lib/Compiler/Compiler.cpp
+        memdb-lib/Compiler/Compiler.h
+        memdb-lib/Compiler/Runtime.cpp
+        memdb-lib/Compiler/Runtime.h
+        memdb-lib/Compiler/Queries.cpp
+        memdb-lib/Compiler/Queries.h
+        memdb-lib/Compiler/Table.cpp
+        memdb-lib/Compiler/Table.h)
 add_executable(db-app app/app.cpp)
 add_executable(lib-tests lib-tests/tests.cpp)
 

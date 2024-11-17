@@ -37,7 +37,7 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
     Stream stream(input);
     while (!stream.isEnd()) {
         char cur_rd = stream.peek();
-        if (cur_rd == ' ' || cur_rd == '\t') {
+        if (cur_rd == ' ' || cur_rd == '\n' || cur_rd == '\t') {
             stream.seek(1);
 //            result.push_back(Lexeme(ELexemeType::Null, cur_line,
 //                                    stream.tell() - line_start_pos));
@@ -108,6 +108,9 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
                                 char c = std::tolower(stream.peek());
                                 if (!(c >= 'a' && c <= 'z') &&
                                     !(c >= '0' && c <= '9') && c != '_') {
+                                    flag = true;
+                                }
+                                if (chr == '|' || chr == '-') {
                                     flag = true;
                                 }
                             }
