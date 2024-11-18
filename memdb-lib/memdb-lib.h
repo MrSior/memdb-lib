@@ -6,36 +6,24 @@
 #define DATABASE_MEMDB_LIB_H
 
 #include <cinttypes>
+#include <utility>
 #include <vector>
 #include <map>
 #include "Parser/LexemeParser.h"
+#include "Compiler/Compiler.h"
 
 namespace memdb {
-
-    enum class SQL_TYPE : int32_t {
-        INT32,
-        BOOL,
-        STRING,
-        BYTES,
-    };
-
-    class Table {
-    public:
-
-    private:
-        std::map<std::string, SQL_TYPE> header_register_;
-    };
-
-
     class QueryException : std::exception {
     public:
         QueryException() = default;
 
-        QueryException(std::string str) {
-            str_ = str;
+        explicit QueryException(std::string str) {
+            str_ = std::move(str);
         }
 
-        virtual const char* what() {
+        explicit QueryException(const CompileException& ex) : QueryException(ex.what()) {}
+
+        [[nodiscard]] const char* what() const noexcept override{
             return str_.c_str();
         }
     private:
