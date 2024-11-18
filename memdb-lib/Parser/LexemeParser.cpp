@@ -27,7 +27,7 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
                                              "join", "on",
                                              "update",
                                              "index", "ordered", "unordered",
-                                             "int", "string", "bytes", "bool"};
+                                             "int", "string", "bytes", "bool", "true", "false"};
 
 //    auto input = input_query;
 
@@ -62,17 +62,17 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
             continue;
         } else if (cur_rd == '{' || cur_rd == '}') {
             stream.seek(1);
-            result.push_back(Lexeme(ELexemeType::CurlyBrack, cur_rd, cur_line,
+            result.push_back(Lexeme(cur_rd == '{' ? ELexemeType::CurlyBrackOp : ELexemeType::CurlyBrackCl, cur_rd, cur_line,
                                     stream.tell() - line_start_pos));
             continue;
         }  else if (cur_rd == '[' || cur_rd == ']') {
             stream.seek(1);
-            result.push_back(Lexeme(ELexemeType::BoxBrack, cur_rd, cur_line,
+            result.push_back(Lexeme(cur_rd == '[' ? ELexemeType::BoxBrackOp : ELexemeType::BoxBrackCl, cur_rd, cur_line,
                                     stream.tell() - line_start_pos));
             continue;
         }  else if (cur_rd == '(' || cur_rd == ')') {
             stream.seek(1);
-            result.push_back(Lexeme(ELexemeType::RoundBrack, cur_rd, cur_line,
+            result.push_back(Lexeme(cur_rd == '(' ? ELexemeType::RoundBrackOp : ELexemeType::RoundBrackCl, cur_rd, cur_line,
                                     stream.tell() - line_start_pos));
             continue;
         }  else if (cur_rd == ',' || cur_rd == ':' || cur_rd == '.') {
@@ -130,6 +130,11 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
             auto [validKeyword, str] = checkIfInList(resvKeywords);
             if (validKeyword) {
                 stream.seek(str.size());
+                if (str == "true" || str == "false") {
+                    result.push_back(Lexeme(ELexemeType::LiteralBool, (int64_t)(str == "true"),
+                                            cur_line, stream.tell() - line_start_pos));
+                    continue;
+                }
                 result.push_back(Lexeme(ELexemeType::Keyword, str, cur_line,
                                         stream.tell() - line_start_pos));
                 continue;

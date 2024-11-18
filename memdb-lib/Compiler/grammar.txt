@@ -9,7 +9,7 @@
 <table>         ::= <string> | select <columns> from <table> where <condition> | <join expr>
 
 // For create
-<arguments>     ::= [{unique | autoincrement | key}] <name>: <type> [= <value>]
+<arguments>     ::= { \{unique | autoincrement | key \} } <name>: <type> [= <value>] {, <arguments>}
 <name>          ::= <string>
 <type>          ::= int32 | bool | string[x] | bytes[x]
 <value>         ::= int_literal | bool_literal | string_literal

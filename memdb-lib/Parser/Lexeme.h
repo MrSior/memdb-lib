@@ -29,14 +29,18 @@ enum class ELexemeType : int {
     Keyword,
     Operator,
 
-    RoundBrack,
-    BoxBrack,
-    CurlyBrack,
+    RoundBrackOp,
+    BoxBrackOp,
+    CurlyBrackOp,
+    RoundBrackCl,
+    BoxBrackCl,
+    CurlyBrackCl,
     Punctuation,
 
     LiteralNum64,
     LiteralStr,
     LiteralBytes,
+    LiteralBool,
 
     Null,
     Invalid,

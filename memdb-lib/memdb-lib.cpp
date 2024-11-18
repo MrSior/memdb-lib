@@ -12,7 +12,12 @@ memdb::QueryResult* memdb::Database::execute(const std::string &query) {
         for (const auto& el : input) {
             std::cout << g_LexemeTypeToStr[el.type] << " " << LexemeDataToStr(el) << std::endl;
         }
+
+        Runtime runtime = compiler_.compile(input);
     } catch (const QueryException& ex) {
+        result->SetException(ex);
+        return result;
+    } catch (const CompileException& ex) {
         result->SetException(ex);
         return result;
     }
@@ -37,6 +42,11 @@ std::string memdb::QueryResult::GetString() {
 void memdb::QueryResult::SetException(const memdb::QueryException &ex) {
     was_ok_ = false;
     query_exception_ = ex;
+}
+
+void memdb::QueryResult::SetException(const CompileException &ex) {
+    was_ok_ = false;
+    query_exception_ = QueryException(ex);
 }
 
 

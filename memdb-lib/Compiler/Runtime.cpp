@@ -5,7 +5,7 @@
 #include "Runtime.h"
 
 std::shared_ptr<IQuery> Runtime::getQuery() {
-    auto tmp = queriesStack_.top();
+    auto tmp = queriesStack_.front();
     queriesStack_.pop();
     return tmp;
 }

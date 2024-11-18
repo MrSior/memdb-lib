@@ -13,7 +13,7 @@ public:
 
     explicit CompileException(const Lexeme& curLexeme, std::string ctx) {
         str_ = "[CE] l:" + std::to_string(curLexeme.line) +
-                " p:" + std::to_string(curLexeme.pos) + std::move(ctx);
+                " p:" + std::to_string(curLexeme.pos) + " " + std::move(ctx);
     }
 
     [[nodiscard]] const char* what() const noexcept override {
@@ -29,6 +29,7 @@ public:
 
     Runtime compile(const std::vector<Lexeme>& lexemes);
 private:
+    Runtime runtime_;
     std::vector<Lexeme> input_;
     std::vector<Lexeme>::iterator curLexemeItr_;
 
@@ -36,8 +37,9 @@ private:
     void MoveItr(int off);
 
 
-    void Query(Runtime& runtime);
+    void Query();
     void Table();
+    std::vector<Column> Arguments();
 };
 
 

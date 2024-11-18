@@ -35,6 +35,7 @@ namespace memdb {
         bool isOk() { return was_ok_; }
         std::string GetString();
         void SetException(const QueryException& ex);
+        void SetException(const CompileException& ex);
         QueryResult();
     private:
         bool was_ok_;
@@ -48,6 +49,7 @@ namespace memdb {
         QueryResult* execute(const std::string& query);
     private:
         LexemeParser lexeme_parser_;
+        Compiler compiler_;
     };
 };
 
