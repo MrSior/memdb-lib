@@ -92,7 +92,10 @@ void Compiler::Query() {
             throw CompileException(*curLexemeItr_, "expected keyword \'where\'");
         }
 
+        ReadLexeme();
+        auto condition = Expression();
 
+        runtime_.putQuery(std::make_shared<QSelect>(columns, condition));
     } else {
         throw CompileException(*curLexemeItr_, "Unknown query type");
     }
@@ -109,6 +112,7 @@ void Compiler::Table() {
     if (curLexemeItr_->type == ELexemeType::Keyword &&
         LexemeDataToStr(*curLexemeItr_) == "select") {
         Query();
+        return;
     }
     throw CompileException(*curLexemeItr_, "invalid table expression");
 }
@@ -284,25 +288,64 @@ std::vector<std::string> Compiler::Columns() {
             cols.back() += curLexemeItr_->str;
             ReadLexeme();
         }
+        if (LexemeDataToStr(*curLexemeItr_) != "," && LexemeDataToStr(*curLexemeItr_) != "from") {
+            throw CompileException(*curLexemeItr_, "expected \',\' separator");
+        } else if (LexemeDataToStr(*curLexemeItr_) == ",") {
+            ReadLexeme();
+        }
     }
     return cols;
 }
 
 std::shared_ptr<OperationNode> Compiler::Expression(int level) {
-    if (level < 7) {
-        auto op1 = Expression(level + 1);
-
-        std::shared_ptr<OperationNode> res = op1;
+    if (level < 8) {
+        std::shared_ptr<OperationNode> res = Expression(level + 1);
 
         auto ops = exprLevelToOperations_[level];
         while (std::find(ops.begin(), ops.end(), curLexemeItr_->str) != ops.end()) {
+            auto tmp = res;
+            res = std::make_shared<OperationNode>(*curLexemeItr_);
+            res->left = tmp;
+
+            ReadLexeme();
+            res->right = Expression(level + 1);;
+        }
+
+        return res;
+    } else if (level == 8) {
+        auto ops = exprLevelToOperations_[level];
+        if (std::find(ops.begin(), ops.end(), curLexemeItr_->str) != ops.end()) {
+            auto res = std::make_shared<OperationNode>(*curLexemeItr_);
 
             ReadLexeme();
 
-            auto op2 = Expression(level + 1);
-            res->right = op2;
-
+            res->left = Expression(level + 1);
+            return res;
+        } else {
+            return Expression(level + 1);
+        }
+    } else if (level == 9) {
+        if (curLexemeItr_->type == ELexemeType::RoundBrackOp) {
+            ReadLexeme();
+            auto res = Expression(1);
+            if (curLexemeItr_->type != ELexemeType::RoundBrackCl) {
+                throw CompileException(*curLexemeItr_, "expected closing round bracket");
+            }
+            ReadLexeme();
+            return res;
+        } else {
+            if (curLexemeItr_->type != ELexemeType::Identifier &&
+                curLexemeItr_->type != ELexemeType::LiteralNum64 &&
+                curLexemeItr_->type != ELexemeType::LiteralBool &&
+                curLexemeItr_->type != ELexemeType::LiteralStr &&
+                curLexemeItr_->type != ELexemeType::LiteralBytes) {
+                throw CompileException(*curLexemeItr_, "expected operand");
+            }
+            auto res = std::make_shared<OperationNode>(*curLexemeItr_);
+            ReadLexeme();
+            return res;
         }
     }
+    throw CompileException(*curLexemeItr_, "invalid level during parsing expression");
 }
 

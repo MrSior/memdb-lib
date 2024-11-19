@@ -97,6 +97,9 @@ private:
 
 class QSelect : public IQuery {
 public:
+    QSelect(std::vector<std::string> colNames, std::shared_ptr<OperationNode> conditionExpr) :
+            type_(EQueryType::QSelect), colNames_(std::move(colNames)), conditionExpr_(conditionExpr) {}
+
     void exec() override;
     EQueryType getType() final { return type_; }
 

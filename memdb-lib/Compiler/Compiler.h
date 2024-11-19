@@ -13,7 +13,7 @@ public:
 
     explicit CompileException(const Lexeme& curLexeme, std::string ctx) {
         str_ = "[CE] l:" + std::to_string(curLexeme.line) +
-                " p:" + std::to_string(curLexeme.pos) + " " + std::move(ctx);
+                " p:" + std::to_string(curLexeme.pos) + " lex: " + LexemeDataToStr(curLexeme) + "   ctx: " + std::move(ctx);
     }
 
     [[nodiscard]] const char* what() const noexcept override {
