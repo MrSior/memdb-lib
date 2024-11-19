@@ -1,5 +1,5 @@
-<query>         ::= create table <table> ( <arguments> ) |
-                    insert ( <values> ) to <table> |
+<query>         ::= create table <name> ( <arguments> ) |
+                    insert ( <values> ) to <name> |
                     select <columns> from <table> where <condition> |
                     update <table> set <assignments> where <condition> |
                     delete <table> where <condition>

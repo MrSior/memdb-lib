@@ -21,6 +21,15 @@ enum class EQueryType : int32_t {
     QTable,
 };
 
+class THeader {
+public:
+    THeader() = default;
+    THeader(std::string name, std::vector<Column> columns) : tName(std::move(name)), columns(std::move(columns)) {}
+
+    std::string tName;
+    std::vector<Column> columns;
+};
+
 class IQuery {
 public:
     virtual void exec() = 0;
@@ -40,24 +49,28 @@ private:
 
 class QCreateTable : public IQuery {
 public:
-    explicit QCreateTable(std::vector<Column> header) : type_(EQueryType::QCreateTable), header_(std::move(header)) {}
+    explicit QCreateTable(THeader header) : type_(EQueryType::QCreateTable), header_(std::move(header)) {}
 
     void exec() override;
     EQueryType getType() final { return type_; }
 private:
     EQueryType type_ ;
-    std::vector<Column> header_;
+    THeader header_;
 };
 
 class QInsert : public IQuery {
 public:
-    void exec() override;
-    EQueryType getType() final { return type_; }
+    using queryParam_t = std::pair<std::string, std::variant<std::nullptr_t, int32_t, bool, std::string, bytes>>;
+    using queryData_t = std::vector<queryParam_t>;
 
+    QInsert(std::string tName, queryData_t values) : type_(EQueryType::QInsert), tableName_(std::move(tName)), values_(std::move(values)) {}
+    void exec() override;
+
+    EQueryType getType() final { return type_; }
 private:
     EQueryType type_;
     std::string tableName_;
-    std::vector<std::pair<std::string, std::variant<int, bool, std::string, bytes>>> values_;
+    queryData_t values_;
 };
 
 #endif //DATABASE_QUERIES_H

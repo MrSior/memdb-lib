@@ -9,8 +9,8 @@
 int main() {
     memdb::Database db;
 
-//    db.execute("select posts.id, users.login, posts.text from users join posts on users.id = posts.user_id where true");
-    auto res = db.execute("create table users ({key, autoincrement} id : int32, {unique} login: string[32], password_hash: bytes[8], is_admin: bool = false)");
+//    auto res = db.execute("create table users ({key, autoincrement} id : int32, {unique} login: string[32], password_hash: bytes[8], is_admin: bool = false)");
+    auto res = db.execute("insert (login = \"vasya\", password_hash = 0xdeadbeefdeadbeef) to users");
     if (res->isOk()) {
         std::cout << "Complete" << std::endl;
     } else {

@@ -40,6 +40,7 @@ private:
     void Query();
     void Table();
     std::vector<Column> Arguments();
+    QInsert::queryData_t Values();
 };
 
 

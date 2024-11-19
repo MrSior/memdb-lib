@@ -20,6 +20,11 @@ Runtime Compiler::compile(const std::vector<Lexeme>& lexemes) {
 
     runtime_ = Runtime();
     Query();
+
+    if (curLexemeItr_->type != ELexemeType::ProgramEnd) {
+        throw CompileException(*curLexemeItr_, "unexpected input after query");
+    }
+
     return runtime_;
 }
 
@@ -32,8 +37,11 @@ void Compiler::Query() {
         ReadLexeme();
         if (curLexemeItr_->str == "table") {
             ReadLexeme();
-            Table();
 
+            if (curLexemeItr_->type != ELexemeType::Identifier) {
+                throw CompileException(*curLexemeItr_, "expected table name");
+            }
+            std::string tName = curLexemeItr_->str;
             ReadLexeme();
 
             if (curLexemeItr_->type != ELexemeType::RoundBrackOp) {
@@ -41,14 +49,35 @@ void Compiler::Query() {
             }
             ReadLexeme();
 
-            runtime_.putQuery(std::make_shared<QCreateTable>(Arguments()));
+            runtime_.putQuery(std::make_shared<QCreateTable>(THeader(tName, Arguments())));
         } else if (curLexemeItr_->str == "index") {
             // index logic
         } else {
             throw CompileException(*curLexemeItr_, "Unknown create (expected table or index)");
         }
     } else if (curLexemeItr_->str == "insert") {
+        ReadLexeme();
 
+        if (curLexemeItr_->type != ELexemeType::RoundBrackOp) {
+            throw CompileException(*curLexemeItr_, "expected \'(\')");
+        }
+        ReadLexeme();
+
+        auto values = Values();
+
+        if (curLexemeItr_->type != ELexemeType::Keyword && LexemeDataToStr(*curLexemeItr_) != "to") {
+            throw CompileException(*curLexemeItr_, "expected keyword \'to\'");
+        }
+        ReadLexeme();
+
+        if (curLexemeItr_->type != ELexemeType::Identifier) {
+            throw CompileException(*curLexemeItr_, "expected table name");
+        }
+
+        auto tName = curLexemeItr_->str;
+        ReadLexeme();
+
+        runtime_.putQuery(std::make_shared<QInsert>(tName, values));
     } else {
         throw CompileException(*curLexemeItr_, "Unknown query type");
     }
@@ -157,6 +186,52 @@ std::vector<Column> Compiler::Arguments() {
         columns.push_back(col);
     }
 
+    ReadLexeme();
     return columns;
 }
 
+QInsert::queryData_t Compiler::Values() {
+    QInsert::queryData_t values;
+    while (curLexemeItr_->type != ELexemeType::RoundBrackCl) {
+        QInsert::queryParam_t elem = {"", nullptr};
+        if (curLexemeItr_->type == ELexemeType::Punctuation && LexemeDataToStr(*curLexemeItr_) == ",") {
+            values.push_back(elem);
+            ReadLexeme();
+            continue;
+        }
+
+        if (curLexemeItr_->type == ELexemeType::Identifier) {
+            elem.first = curLexemeItr_->str;
+
+            ReadLexeme();
+            if (LexemeDataToStr(*curLexemeItr_) != "=") {
+                throw CompileException(*curLexemeItr_, "expected \'=\'");
+            }
+            ReadLexeme();
+        }
+
+        switch (curLexemeItr_->type) {
+            case ELexemeType::LiteralNum64:
+                elem.second = (int32_t)curLexemeItr_->i64;
+                break;
+            case ELexemeType::LiteralBool:
+                elem.second = (bool)curLexemeItr_->i64;
+                break;
+            case ELexemeType::LiteralBytes:
+            case ELexemeType::LiteralStr:
+                elem.second = curLexemeItr_->str;
+                break;
+            default:
+                throw CompileException(*curLexemeItr_, "expected column value");
+        }
+
+        if (curLexemeItr_->type == ELexemeType::Punctuation && LexemeDataToStr(*curLexemeItr_) == ",") {
+            values.push_back(elem);
+        } else {
+            throw CompileException(*curLexemeItr_, "expected \',\' separator");
+        }
+    }
+
+    ReadLexeme();
+    return values;
+}
