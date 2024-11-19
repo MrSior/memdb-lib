@@ -27,7 +27,8 @@ enum class EAttributes : int32_t {
 };
 
 class Table {
-
+public:
+    using cell_t = std::variant<int32_t, bool, std::string, bytes>;
 };
 
 class Column {
@@ -38,6 +39,15 @@ public:
     bool isHasDefault = false;
     std::vector<EAttributes> attributes;
     std::variant<int32_t, bool, std::string, bytes> defaultValue;
+};
+
+class THeader {
+public:
+    THeader() = default;
+    THeader(std::string name, std::vector<Column> columns) : tName(std::move(name)), columns(std::move(columns)) {}
+
+    std::string tName;
+    std::vector<Column> columns;
 };
 
 extern std::map<EAttributes, std::string> g_AttrTypeToStr;

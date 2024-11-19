@@ -48,7 +48,10 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
                 std::string bytes_seq = "0x";
                 stream.seek(1);
                 for (int i = 0; !stream.isEnd(); ++i) {
-                    if (stream.peek() < '0' || stream.peek() > '9') break;
+                    if ((stream.peek() < '0' || stream.peek() > '9') &&
+                        (stream.peek() < 'a' || stream.peek() > 'f')) {
+                        break;
+                    }
                     bytes_seq += stream.get();
                 }
                 result.push_back(Lexeme(ELexemeType::LiteralBytes, bytes_seq,

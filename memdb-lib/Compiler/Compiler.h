@@ -41,6 +41,19 @@ private:
     void Table();
     std::vector<Column> Arguments();
     QInsert::queryData_t Values();
+    std::vector<std::string> Columns();
+
+    std::map<int, std::vector<std::string>> exprLevelToOperations_ = {
+            {1, {"||"}},
+            {2, {"&&"}},
+            {3, {"^^"}},
+            {4, {"=", "!="}},
+            {5, {"<=", ">=", "<", ">"}},
+            {6, {"+", "-"}},
+            {7, {"*", "/", "%"}},
+            {8, {"-", "!", "#"}},
+    };
+    std::shared_ptr<OperationNode> Expression(int level = 1);
 };
 
 

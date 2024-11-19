@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include "Table.h"
+#include "Parser/Lexeme.h"
 
 enum class EQueryType : int32_t {
     QInsert,
@@ -21,13 +22,34 @@ enum class EQueryType : int32_t {
     QTable,
 };
 
-class THeader {
+class RuntimeException : std::exception {
 public:
-    THeader() = default;
-    THeader(std::string name, std::vector<Column> columns) : tName(std::move(name)), columns(std::move(columns)) {}
+    RuntimeException() = default;
 
-    std::string tName;
-    std::vector<Column> columns;
+    explicit RuntimeException(std::string ctx) {
+        str_ = "[RE] " + std::move(ctx);
+    }
+
+    [[nodiscard]] const char* what() const noexcept override {
+        return str_.c_str();
+    }
+private:
+    std::string str_;
+};
+
+class OperationNode {
+public:
+    std::shared_ptr<OperationNode> left;
+    std::shared_ptr<OperationNode> right;
+    Lexeme lexeme;
+
+    explicit OperationNode(Lexeme lexeme) {
+        left = nullptr;
+        right = nullptr;
+        this->lexeme = std::move(lexeme);
+    }
+
+    Table::cell_t getResult();
 };
 
 class IQuery {
@@ -71,6 +93,17 @@ private:
     EQueryType type_;
     std::string tableName_;
     queryData_t values_;
+};
+
+class QSelect : public IQuery {
+public:
+    void exec() override;
+    EQueryType getType() final { return type_; }
+
+private:
+    EQueryType type_;
+    std::vector<std::string> colNames_;
+    std::shared_ptr<OperationNode> conditionExpr_;
 };
 
 #endif //DATABASE_QUERIES_H

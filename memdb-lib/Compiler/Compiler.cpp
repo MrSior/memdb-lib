@@ -78,13 +78,39 @@ void Compiler::Query() {
         ReadLexeme();
 
         runtime_.putQuery(std::make_shared<QInsert>(tName, values));
+    } else if (curLexemeItr_->str == "select") {
+        ReadLexeme();
+
+        auto columns = Columns();
+        if (curLexemeItr_->str != "from") {
+            throw CompileException(*curLexemeItr_, "expected keyword \'from\'");
+        }
+        ReadLexeme();
+        Table();
+
+        if (curLexemeItr_->str != "where") {
+            throw CompileException(*curLexemeItr_, "expected keyword \'where\'");
+        }
+
+
     } else {
         throw CompileException(*curLexemeItr_, "Unknown query type");
     }
 }
 
 void Compiler::Table() {
+    if (curLexemeItr_->type == ELexemeType::Identifier) {
+        runtime_.putQuery(std::make_shared<QTable>(curLexemeItr_->str));
+        ReadLexeme();
 
+        // here goes join case parsing logic
+        return;
+    }
+    if (curLexemeItr_->type == ELexemeType::Keyword &&
+        LexemeDataToStr(*curLexemeItr_) == "select") {
+        Query();
+    }
+    throw CompileException(*curLexemeItr_, "invalid table expression");
 }
 
 std::vector<Column> Compiler::Arguments() {
@@ -224,8 +250,12 @@ QInsert::queryData_t Compiler::Values() {
             default:
                 throw CompileException(*curLexemeItr_, "expected column value");
         }
+        ReadLexeme();
 
         if (curLexemeItr_->type == ELexemeType::Punctuation && LexemeDataToStr(*curLexemeItr_) == ",") {
+            values.push_back(elem);
+            ReadLexeme();
+        } else if (curLexemeItr_->type == ELexemeType::RoundBrackCl) {
             values.push_back(elem);
         } else {
             throw CompileException(*curLexemeItr_, "expected \',\' separator");
@@ -235,3 +265,44 @@ QInsert::queryData_t Compiler::Values() {
     ReadLexeme();
     return values;
 }
+
+std::vector<std::string> Compiler::Columns() {
+    std::vector<std::string> cols;
+    while (LexemeDataToStr(*curLexemeItr_) != "from" &&
+           curLexemeItr_->type != ELexemeType::ProgramEnd) {
+        if (curLexemeItr_->type != ELexemeType::Identifier) {
+            throw CompileException(*curLexemeItr_, "expected column name");
+        }
+        cols.push_back(curLexemeItr_->str);
+        ReadLexeme();
+        if (LexemeDataToStr(*curLexemeItr_) == ".") {
+            cols.back() += ".";
+            ReadLexeme();
+            if (curLexemeItr_->type != ELexemeType::Identifier) {
+                throw CompileException(*curLexemeItr_, "invalid column name");
+            }
+            cols.back() += curLexemeItr_->str;
+            ReadLexeme();
+        }
+    }
+    return cols;
+}
+
+std::shared_ptr<OperationNode> Compiler::Expression(int level) {
+    if (level < 7) {
+        auto op1 = Expression(level + 1);
+
+        std::shared_ptr<OperationNode> res = op1;
+
+        auto ops = exprLevelToOperations_[level];
+        while (std::find(ops.begin(), ops.end(), curLexemeItr_->str) != ops.end()) {
+
+            ReadLexeme();
+
+            auto op2 = Expression(level + 1);
+            res->right = op2;
+
+        }
+    }
+}
+

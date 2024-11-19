@@ -23,7 +23,7 @@ public:
     void putTable(const std::shared_ptr<Table>& table_ptr);
 
 private:
-    std::queue<std::shared_ptr<IQuery>> queriesStack_;
+    std::queue<std::shared_ptr<IQuery>> queriesQueue_;
     std::stack<std::shared_ptr<Table>> tablesStack_;
 };
 

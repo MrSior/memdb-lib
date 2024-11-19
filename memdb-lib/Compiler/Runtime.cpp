@@ -5,8 +5,8 @@
 #include "Runtime.h"
 
 std::shared_ptr<IQuery> Runtime::getQuery() {
-    auto tmp = queriesStack_.front();
-    queriesStack_.pop();
+    auto tmp = queriesQueue_.front();
+    queriesQueue_.pop();
     return tmp;
 }
 
@@ -17,7 +17,7 @@ std::shared_ptr<Table> Runtime::getTable() {
 }
 
 void Runtime::putQuery(const std::shared_ptr<IQuery>& query_ptr) {
-    queriesStack_.push(query_ptr);
+    queriesQueue_.push(query_ptr);
 }
 
 void Runtime::putTable(const std::shared_ptr<Table>& table_ptr) {
