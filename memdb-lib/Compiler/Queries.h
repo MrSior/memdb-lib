@@ -49,7 +49,7 @@ public:
         this->lexeme = std::move(lexeme);
     }
 
-    Table::cell_t getResult();
+    Table::cell_t getResult(const THeader& header, const Table::row_t& row);
 };
 
 class IQuery {

@@ -29,6 +29,7 @@ enum class EAttributes : int32_t {
 class Table {
 public:
     using cell_t = std::variant<int32_t, bool, std::string, bytes>;
+    using row_t = std::vector<cell_t>;
 };
 
 class Column {
