@@ -22,9 +22,11 @@ public:
     void putQuery(const std::shared_ptr<IQuery>& query_ptr);
     void putTable(const std::shared_ptr<Table>& table_ptr);
 
+    void Run(std::map<std::string, std::shared_ptr<Table>>& tRegistry);
+
 private:
     std::queue<std::shared_ptr<IQuery>> queriesQueue_;
-    std::stack<std::shared_ptr<Table>> tablesStack_;
+    std::queue<std::shared_ptr<Table>> tablesQueue_;
 };
 
 

@@ -14,10 +14,14 @@ memdb::QueryResult* memdb::Database::execute(const std::string &query) {
         }
 
         Runtime runtime = compiler_.compile(input);
+        runtime.Run(tableRegistry_);
     } catch (const QueryException& ex) {
         result->SetException(ex);
         return result;
     } catch (const CompileException& ex) {
+        result->SetException(ex);
+        return result;
+    } catch (const RuntimeException& ex) {
         result->SetException(ex);
         return result;
     }
@@ -45,6 +49,11 @@ void memdb::QueryResult::SetException(const memdb::QueryException &ex) {
 }
 
 void memdb::QueryResult::SetException(const CompileException &ex) {
+    was_ok_ = false;
+    query_exception_ = QueryException(ex);
+}
+
+void memdb::QueryResult::SetException(const RuntimeException &ex) {
     was_ok_ = false;
     query_exception_ = QueryException(ex);
 }

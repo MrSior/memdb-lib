@@ -3,17 +3,114 @@
 //
 
 #include "Queries.h"
+#include "Runtime.h"
+#include <type_traits>
 
-void QTable::exec() {
-
+void QTable::exec(Runtime& rt) {
+    throw RuntimeException("QTable exec() must be called with a table registry reference parameter");
 }
 
-void QCreateTable::exec() {
-
+void QTable::exec(Runtime& rt, std::map<std::string, std::shared_ptr<Table>> &tRegistry) {
+    if (!tRegistry.contains(tableName_)) {
+        throw RuntimeException("table: " + tableName_ + " doesn't exist");
+    }
+    rt.putTable(tRegistry[tableName_]);
 }
 
-void QInsert::exec() {
+void QCreateTable::exec(Runtime& rt) {
+    throw RuntimeException("QCreateTable exec() must be called with a table registry reference parameter");
+}
 
+void QCreateTable::exec(Runtime &rt, std::map<std::string, std::shared_ptr<Table>> &tRegistry) {
+    tRegistry.insert({header_.tName, std::make_shared<Table>(header_)});
+}
+
+void QInsert::exec(Runtime& rt) {
+    auto table = rt.getTable();
+    auto tHeader = table->getHeader();
+    if (tHeader.columns.size() != values_.size()) {
+        throw RuntimeException("invalid number of values in insert");
+    }
+    Table::row_t row(tHeader.columns.size());
+    bool isWithNames = true;
+    if (values_.front().first.empty()) {
+        isWithNames = false;
+    }
+    for (int idx = 0; idx < values_.size(); ++idx) {
+        if (isWithNames) {
+            if (values_[idx].first.empty()) {
+                throw RuntimeException("All values must be in format <name> = <value>");
+            }
+
+            for (int i = 0; i < tHeader.columns.size(); ++i) {
+                if (tHeader.columns[i].name == values_[idx].first) {
+                    if (std::holds_alternative<int32_t>(values_[idx].second)) {
+                        row[i] = std::get<int32_t>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<bool>(values_[idx].second)) {
+                        row[i] = std::get<bool>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<std::string>(values_[idx].second)) {
+                        row[i] = std::get<std::string>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<bytes>(values_[idx].second)) {
+                        row[i] = std::get<bytes>(values_[idx].second);
+                        continue;
+                    }
+                }
+            }
+        } else {
+            if (std::holds_alternative<std::nullptr_t>(values_[idx].second)) {
+                bool flag = false;
+                for (const auto& attr : tHeader.columns[idx].attributes) {
+                    if (attr == EAttributes::AUTOINCREMENT) {
+                        flag = true;
+                        if (std::holds_alternative<int32_t>(table->back()[idx])) {
+                            row[idx] = std::get<int32_t>(table->back()[idx]) + 1;
+                        } else {
+                            throw RuntimeException("AUTOINCREMENT attr for not-int column");
+                        }
+                        break;
+                    }
+                }
+
+                if (!flag) {
+                    if (tHeader.columns[idx].isHasDefault) {
+                        row[idx] = tHeader.columns[idx].defaultValue;
+                    } else {
+                        throw RuntimeException("column: " + tHeader.columns[idx].name + " doesn't have default value");
+                    }
+                }
+            } else if (values_[idx].first.empty()) {
+                if (values_[idx].second.index() == (int32_t)tHeader.columns[idx].type + 1) {
+                    if (std::holds_alternative<int32_t>(values_[idx].second)) {
+                        row[idx] = std::get<int32_t>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<bool>(values_[idx].second)) {
+                        row[idx] = std::get<bool>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<std::string>(values_[idx].second)) {
+                        row[idx] = std::get<std::string>(values_[idx].second);
+                        continue;
+                    }
+                    if (std::holds_alternative<bytes>(values_[idx].second)) {
+                        row[idx] = std::get<bytes>(values_[idx].second);
+                        continue;
+                    }
+                } else {
+                    throw RuntimeException("column: " + tHeader.columns[idx].name + " and value has different types");
+                }
+            } else {
+                throw RuntimeException("All values must in format (<value>,<value>,<value> ...)");
+            }
+        }
+    }
+    table->Insert(row);
 }
 
 Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t& row) {
@@ -79,6 +176,6 @@ Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t
     }
 }
 
-void QSelect::exec() {
+void QSelect::exec(Runtime& rt) {
 
 }

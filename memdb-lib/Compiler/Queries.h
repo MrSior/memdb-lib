@@ -52,9 +52,11 @@ public:
     Table::cell_t getResult(const THeader& header, const Table::row_t& row);
 };
 
+class Runtime;
+
 class IQuery {
 public:
-    virtual void exec() = 0;
+    virtual void exec(Runtime& rt) = 0;
     virtual EQueryType getType() = 0;
 };
 
@@ -62,7 +64,8 @@ class QTable : public IQuery {
 public:
     explicit QTable(std::string tableName) : type_(EQueryType::QTable), tableName_(std::move(tableName)) {}
 
-    void exec() override;
+    void exec(Runtime& rt) override;
+    void exec(Runtime& rt, std::map<std::string, std::shared_ptr<Table>>& tRegistry);
     EQueryType getType() final { return type_; };
 private:
     EQueryType type_ ;
@@ -73,7 +76,8 @@ class QCreateTable : public IQuery {
 public:
     explicit QCreateTable(THeader header) : type_(EQueryType::QCreateTable), header_(std::move(header)) {}
 
-    void exec() override;
+    void exec(Runtime& rt) override;
+    void exec(Runtime& rt, std::map<std::string, std::shared_ptr<Table>>& tRegistry);
     EQueryType getType() final { return type_; }
 private:
     EQueryType type_ ;
@@ -85,22 +89,21 @@ public:
     using queryParam_t = std::pair<std::string, std::variant<std::nullptr_t, int32_t, bool, std::string, bytes>>;
     using queryData_t = std::vector<queryParam_t>;
 
-    QInsert(std::string tName, queryData_t values) : type_(EQueryType::QInsert), tableName_(std::move(tName)), values_(std::move(values)) {}
-    void exec() override;
+    QInsert(queryData_t values) : type_(EQueryType::QInsert), values_(std::move(values)) {}
+    void exec(Runtime& rt) override;
 
     EQueryType getType() final { return type_; }
 private:
     EQueryType type_;
-    std::string tableName_;
     queryData_t values_;
 };
 
 class QSelect : public IQuery {
 public:
     QSelect(std::vector<std::string> colNames, std::shared_ptr<OperationNode> conditionExpr) :
-            type_(EQueryType::QSelect), colNames_(std::move(colNames)), conditionExpr_(conditionExpr) {}
+            type_(EQueryType::QSelect), colNames_(std::move(colNames)), conditionExpr_(std::move(conditionExpr)) {}
 
-    void exec() override;
+    void exec(Runtime& rt) override;
     EQueryType getType() final { return type_; }
 
 private:

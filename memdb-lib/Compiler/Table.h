@@ -7,6 +7,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <utility>
 #include <vector>
 #include <map>
 #include <cinttypes>
@@ -26,16 +27,12 @@ enum class EAttributes : int32_t {
     KEY,
 };
 
-class Table {
-public:
-    using cell_t = std::variant<int32_t, bool, std::string, bytes>;
-    using row_t = std::vector<cell_t>;
-};
-
 class Column {
 public:
+    Column() = default;
+
     std::string name;
-    EDbType type;
+    EDbType type = EDbType::INT32;
     size_t size = 1;
     bool isHasDefault = false;
     std::vector<EAttributes> attributes;
@@ -49,6 +46,23 @@ public:
 
     std::string tName;
     std::vector<Column> columns;
+};
+
+
+class Table {
+public:
+    using cell_t = std::variant<int32_t, bool, std::string, bytes>;
+    using row_t = std::vector<cell_t>;
+
+    Table() = default;
+    explicit Table(THeader tHeader) : table_({}), header_(std::move(tHeader)) {};
+
+    void Insert(const row_t& row);
+    THeader getHeader() { return header_; }
+    row_t back() { return table_.back(); }
+private:
+    std::vector<row_t> table_;
+    THeader header_;
 };
 
 extern std::map<EAttributes, std::string> g_AttrTypeToStr;

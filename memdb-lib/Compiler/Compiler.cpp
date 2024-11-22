@@ -74,10 +74,11 @@ void Compiler::Query() {
             throw CompileException(*curLexemeItr_, "expected table name");
         }
 
-        auto tName = curLexemeItr_->str;
+//        auto tName = curLexemeItr_->str;
+        runtime_.putQuery(std::make_shared<QTable>(curLexemeItr_->str));
         ReadLexeme();
 
-        runtime_.putQuery(std::make_shared<QInsert>(tName, values));
+        runtime_.putQuery(std::make_shared<QInsert>(values));
     } else if (curLexemeItr_->str == "select") {
         ReadLexeme();
 
@@ -197,6 +198,11 @@ std::vector<Column> Compiler::Arguments() {
                     col.defaultValue = (int32_t)curLexemeItr_->i64;
                     break;
                 case ELexemeType::LiteralBytes:
+                    if (curLexemeItr_->str.length() != col.size) {
+                        throw CompileException(*curLexemeItr_, "incorrect default value");
+                    }
+                    col.defaultValue = bytes(curLexemeItr_->str.begin(), curLexemeItr_->str.end());
+                    break;
                 case ELexemeType::LiteralStr:
                     if (curLexemeItr_->str.length() != col.size) {
                         throw CompileException(*curLexemeItr_, "incorrect default value");
@@ -248,6 +254,8 @@ QInsert::queryData_t Compiler::Values() {
                 elem.second = (bool)curLexemeItr_->i64;
                 break;
             case ELexemeType::LiteralBytes:
+                elem.second = bytes(curLexemeItr_->str.begin(), curLexemeItr_->str.end());
+                break;
             case ELexemeType::LiteralStr:
                 elem.second = curLexemeItr_->str;
                 break;

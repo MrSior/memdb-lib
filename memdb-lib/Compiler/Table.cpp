@@ -29,3 +29,7 @@ std::map<std::string, EDbType> g_StrToDbType = {
         {"string",  EDbType::STRING},
         {"bytes",   EDbType::BYTES},
 };
+
+void Table::Insert(const Table::row_t& row) {
+    table_.push_back(row);
+}

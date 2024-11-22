@@ -22,6 +22,7 @@ namespace memdb {
         }
 
         explicit QueryException(const CompileException& ex) : QueryException(ex.what()) {}
+        explicit QueryException(const RuntimeException& ex) : QueryException(ex.what()) {}
 
         [[nodiscard]] const char* what() const noexcept override{
             return str_.c_str();
@@ -36,6 +37,7 @@ namespace memdb {
         std::string GetString();
         void SetException(const QueryException& ex);
         void SetException(const CompileException& ex);
+        void SetException(const RuntimeException& ex);
         QueryResult();
     private:
         bool was_ok_;
@@ -50,6 +52,7 @@ namespace memdb {
     private:
         LexemeParser lexeme_parser_;
         Compiler compiler_;
+        std::map<std::string, std::shared_ptr<Table>> tableRegistry_;
     };
 };
 
