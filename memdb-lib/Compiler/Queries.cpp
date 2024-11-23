@@ -174,8 +174,38 @@ Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t
             }
         }
     }
+    throw RuntimeException("Condition evaluation failed");
 }
 
 void QSelect::exec(Runtime& rt) {
+    auto table = rt.getTable();
+    auto header = table->getHeader();
 
+    THeader resTableHeader;
+    std::vector<int> validColsIdx;
+    for (const auto& colName : colNames_) {
+        for (int idx = 0; idx < header.columns.size(); ++idx) {
+            if (colName == header.columns[idx].name) {
+                resTableHeader.columns.push_back(header.columns[idx]);
+                validColsIdx.push_back(idx);
+            }
+        }
+    }
+
+    auto resTable = std::make_shared<Table>();
+    for (int idx = 0; idx < table->getSize(); ++idx) {
+        auto curRow = table->getRow(idx);
+
+        auto conditionRes = conditionExpr_->getResult(header, curRow);
+        if (!std::holds_alternative<bool>(conditionRes)) {
+            throw RuntimeException("condition expr must be boolean");
+        }
+        if (std::get<bool>(conditionRes)) {
+            Table::row_t row;
+            for (auto colInd : validColsIdx) {
+                row.push_back(curRow[colInd]);
+            }
+        }
+    }
+    rt.putTable(resTable);
 }

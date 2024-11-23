@@ -60,6 +60,9 @@ public:
     void Insert(const row_t& row);
     THeader getHeader() { return header_; }
     row_t back() { return table_.back(); }
+    size_t getSize() { return table_.size(); }
+    row_t getRow(int idx) { return table_[idx]; }
+    void pushRow(const row_t& row) { table_.push_back(row) };
 private:
     std::vector<row_t> table_;
     THeader header_;

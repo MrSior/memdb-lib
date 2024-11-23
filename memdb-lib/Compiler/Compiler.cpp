@@ -228,12 +228,12 @@ std::vector<Column> Compiler::Arguments() {
 
 QInsert::queryData_t Compiler::Values() {
     QInsert::queryData_t values;
-    while (curLexemeItr_->type != ELexemeType::RoundBrackCl) {
+
+    auto readVal = [&]() -> QInsert::queryParam_t {
         QInsert::queryParam_t elem = {"", nullptr};
-        if (curLexemeItr_->type == ELexemeType::Punctuation && LexemeDataToStr(*curLexemeItr_) == ",") {
-            values.push_back(elem);
-            ReadLexeme();
-            continue;
+        if (curLexemeItr_->type == ELexemeType::RoundBrackCl ||
+            LexemeDataToStr(*curLexemeItr_) == ",") {
+            return elem;
         }
 
         if (curLexemeItr_->type == ELexemeType::Identifier) {
@@ -264,14 +264,19 @@ QInsert::queryData_t Compiler::Values() {
         }
         ReadLexeme();
 
-        if (curLexemeItr_->type == ELexemeType::Punctuation && LexemeDataToStr(*curLexemeItr_) == ",") {
-            values.push_back(elem);
-            ReadLexeme();
-        } else if (curLexemeItr_->type == ELexemeType::RoundBrackCl) {
-            values.push_back(elem);
-        } else {
-            throw CompileException(*curLexemeItr_, "expected \',\' separator");
+        return elem;
+    };
+
+    while (true) {
+        values.push_back(readVal());
+        if (curLexemeItr_->type == ELexemeType::RoundBrackCl) {
+            break;
         }
+        if (LexemeDataToStr(*curLexemeItr_) == ",") {
+            ReadLexeme();
+            continue;
+        }
+        throw CompileException(*curLexemeItr_, R"(expected '(' or ',')");
     }
 
     ReadLexeme();
