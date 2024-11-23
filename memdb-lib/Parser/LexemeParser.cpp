@@ -113,7 +113,7 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
                                     !(c >= '0' && c <= '9') && c != '_') {
                                     flag = true;
                                 }
-                                if (chr == '|' || chr == '-') {
+                                if (chr == '|' || chr == '-' || chr == '!') {
                                     flag = true;
                                 }
                             }

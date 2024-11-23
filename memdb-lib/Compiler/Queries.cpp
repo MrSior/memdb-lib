@@ -205,6 +205,7 @@ void QSelect::exec(Runtime& rt) {
             for (auto colInd : validColsIdx) {
                 row.push_back(curRow[colInd]);
             }
+            resTable->pushRow(row);
         }
     }
     rt.putTable(resTable);

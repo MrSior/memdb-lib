@@ -16,15 +16,13 @@ int main() {
     } else {
         std::cout << res->GetString() << std::endl;
     }
-    delete res;
 
-    res = db.execute("insert (0,) to users");
+    res = db.execute("insert (0,true) to users");
     if (res->isOk()) {
         std::cout << "Complete" << std::endl;
     } else {
         std::cout << res->GetString() << std::endl;
     }
-    delete res;
 
     res = db.execute("insert (,) to users");
     if (res->isOk()) {
@@ -32,6 +30,20 @@ int main() {
     } else {
         std::cout << res->GetString() << std::endl;
     }
-    delete res;
+
+    res = db.execute("insert (is_admin = false, id = 30) to users");
+    if (res->isOk()) {
+        std::cout << "Complete" << std::endl;
+    } else {
+        std::cout << res->GetString() << std::endl;
+    }
+
+    res = db.execute("select id, is_admin from users where !is_admin");
+    if (res->isOk()) {
+        std::cout << "Complete" << std::endl;
+    } else {
+        std::cout << res->GetString() << std::endl;
+    }
+
     return 0;
 }

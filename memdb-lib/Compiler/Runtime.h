@@ -23,7 +23,7 @@ public:
     void putTable(const std::shared_ptr<Table>& table_ptr);
 
     void Run(std::map<std::string, std::shared_ptr<Table>>& tRegistry);
-
+    bool isHasResTable() { return !tablesQueue_.empty(); }
 private:
     std::queue<std::shared_ptr<IQuery>> queriesQueue_;
     std::queue<std::shared_ptr<Table>> tablesQueue_;

@@ -35,20 +35,23 @@ namespace memdb {
     public:
         bool isOk() { return was_ok_; }
         std::string GetString();
+        std::optional<Table> GetTable();
         void SetException(const QueryException& ex);
         void SetException(const CompileException& ex);
         void SetException(const RuntimeException& ex);
+        void SetTable(const std::shared_ptr<Table>& tablePtr);
         QueryResult();
     private:
         bool was_ok_;
         QueryException query_exception_;
+        std::optional<Table> queryResTable_;
     };
 
     class Database {
     public:
         Database() = default;
 
-        QueryResult* execute(const std::string& query);
+        std::shared_ptr<QueryResult> execute(const std::string& query);
     private:
         LexemeParser lexeme_parser_;
         Compiler compiler_;
