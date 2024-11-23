@@ -5,6 +5,8 @@
 #include "Queries.h"
 #include "Runtime.h"
 #include <type_traits>
+#include <functional>
+#include <unordered_map>
 
 void QTable::exec(Runtime& rt) {
     throw RuntimeException("QTable exec() must be called with a table registry reference parameter");
@@ -147,8 +149,102 @@ Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t
                 throw RuntimeException("{expression evaluation} two operands of different types");
             }
 
-            if (LexemeDataToStr(lexeme) == "+") {
+            auto processOperation = [](const std::string& op, const Table::cell_t& a, const Table::cell_t& b) -> int32_t {
+                static const std::unordered_map<std::string, std::function<int32_t(int32_t, int32_t)>> operations = {
+                        {"+", [](int32_t a, int32_t b) { return a + b; }},
+                        {"-", [](int32_t a, int32_t b) { return a - b; }},
+                        {"*", [](int32_t a, int32_t b) { return a * b; }},
+                        {"/", [](int32_t a, int32_t b) { if (b == 0) throw RuntimeException("Division by zero"); return a / b; }},
+                        {"%", [](int32_t a, int32_t b) { if (b == 0) throw RuntimeException("Modulo by zero"); return a % b; }},
+                };
 
+                auto it = operations.find(op);
+                if (it != operations.end()) {
+                    if (!std::holds_alternative<int32_t>(a)) {
+                        RuntimeException("Unsupported type for math operation: " + op);
+                    }
+                    return it->second(std::get<int32_t>(a), std::get<int32_t>(b));
+                }
+                throw RuntimeException("Unsupported operation: " + op);
+            };
+
+            auto processComparison = [](const std::string& op, const Table::cell_t& a, const Table::cell_t& b) -> bool {
+                static std::function<bool(const std::string&, const Table::cell_t&, const Table::cell_t&)> self = nullptr;
+
+                self = [](const std::string& op, const Table::cell_t& a, const Table::cell_t& b) -> bool {
+                    using comparison_func = std::function<bool(const Table::cell_t&, const Table::cell_t&)>;
+
+                    static const std::unordered_map<std::string, comparison_func> comparisons = {
+                            {"=", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                if (std::holds_alternative<int32_t>(a)) return std::get<int32_t>(a) == std::get<int32_t>(b);
+                                if (std::holds_alternative<bool>(a)) return std::get<bool>(a) == std::get<bool>(b);
+                                if (std::holds_alternative<std::string>(a)) return std::get<std::string>(a) == std::get<std::string>(b);
+                                if (std::holds_alternative<bytes>(a)) {
+                                    return std::string(std::get<bytes>(a).begin(), std::get<bytes>(a).end()) ==
+                                           std::string(std::get<bytes>(b).begin(), std::get<bytes>(b).end());
+                                }
+                                throw RuntimeException("Unsupported type for == comparison");
+                            }},
+                            {"!=", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                return !self("=", a, b);
+                            }},
+                            {"<", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                if (std::holds_alternative<int32_t>(a)) return std::get<int32_t>(a) < std::get<int32_t>(b);
+                                if (std::holds_alternative<bool>(a)) return std::get<bool>(a) < std::get<bool>(b);
+                                if (std::holds_alternative<std::string>(a)) return std::get<std::string>(a) < std::get<std::string>(b);
+                                if (std::holds_alternative<bytes>(a)) {
+                                    return std::string(std::get<bytes>(a).begin(), std::get<bytes>(a).end()) <
+                                           std::string(std::get<bytes>(b).begin(), std::get<bytes>(b).end());
+                                }
+                                throw RuntimeException("Unsupported type for < comparison");
+                            }},
+                            {"<=", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                return self("<", a, b) || self("=", a, b);
+                            }},
+                            {">", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                return !self("<=", a, b);
+                            }},
+                            {">=", [](const Table::cell_t& a, const Table::cell_t& b) {
+                                return !self("<", a, b);
+                            }},
+                    };
+
+                    auto it = comparisons.find(op);
+                    if (it != comparisons.end()) {
+                        return it->second(a, b);
+                    }
+                    throw RuntimeException("Unsupported comparison operation: " + op);
+                };
+
+                return self(op, a, b);
+            };
+
+            auto processBoolean = [](const std::string& op, const Table::cell_t& a, const Table::cell_t& b) -> bool {
+                static const std::unordered_map<std::string, std::function<bool(bool , bool)>> booleans = {
+                        {"&&", [](bool a, bool b) { return a && b; }},
+                        {"||", [](bool a, bool b) { return a || b; }},
+                        {"^^", [](bool a, bool b) { return a ^ b; }},
+                };
+
+                auto it = booleans.find(op);
+                if (it != booleans.end()) {
+                    if (!std::holds_alternative<bool>(a)) {
+                        RuntimeException("Unsupported type for math operation: " + op);
+                    }
+                    return it->second(std::get<bool>(a), std::get<bool>(b));
+                }
+                throw RuntimeException("Unsupported operation: " + op);
+            };
+
+            auto op = LexemeDataToStr(lexeme);
+            if (op == "<" || op == "<=" || op == ">" || op == ">=" || op == "!=" || op == "=") {
+                return processComparison(op, leftRes, rightRes);
+            }
+            if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
+                return processOperation(op, leftRes, rightRes);
+            }
+            if (op == "&&" || op == "||" || op == "^^") {
+                return processBoolean(op, leftRes, rightRes);
             }
         }
     } else {
@@ -192,7 +288,7 @@ void QSelect::exec(Runtime& rt) {
         }
     }
 
-    auto resTable = std::make_shared<Table>();
+    auto resTable = std::make_shared<Table>(resTableHeader);
     for (int idx = 0; idx < table->getSize(); ++idx) {
         auto curRow = table->getRow(idx);
 

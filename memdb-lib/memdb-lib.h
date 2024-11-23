@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <iomanip>
 #include "Parser/LexemeParser.h"
 #include "Compiler/Compiler.h"
 
@@ -57,6 +58,9 @@ namespace memdb {
         Compiler compiler_;
         std::map<std::string, std::shared_ptr<Table>> tableRegistry_;
     };
+
+
+    void printTable(std::ostream& os, const Table& table);
 };
 
 #endif //DATABASE_MEMDB_LIB_H

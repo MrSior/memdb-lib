@@ -16,7 +16,7 @@ typedef std::vector<char> bytes;
 
 enum class EDbType : int32_t {
     INT32,
-    BOOl,
+    BOOL,
     STRING,
     BYTES,
 };
@@ -58,10 +58,12 @@ public:
     explicit Table(THeader tHeader) : table_({}), header_(std::move(tHeader)) {};
 
     void Insert(const row_t& row);
-    THeader getHeader() { return header_; }
-    row_t back() { return table_.back(); }
-    size_t getSize() { return table_.size(); }
-    row_t getRow(int idx) { return table_[idx]; }
+
+    THeader getHeader()         const { return header_; }
+    row_t   back()              const { return table_.back(); }
+    size_t  getSize()           const { return table_.size(); }
+    row_t   getRow(int idx)     const { return table_[idx]; }
+
     void pushRow(const row_t& row) { table_.push_back(row); };
 private:
     std::vector<row_t> table_;

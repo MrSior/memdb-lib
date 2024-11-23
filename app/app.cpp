@@ -3,8 +3,8 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include "memdb-lib.h"
-
 
 int main() {
     memdb::Database db;
@@ -38,9 +38,11 @@ int main() {
         std::cout << res->GetString() << std::endl;
     }
 
-    res = db.execute("select id, is_admin from users where !is_admin");
+    res = db.execute("select id, is_admin from users where true");
     if (res->isOk()) {
-        std::cout << "Complete" << std::endl;
+        if (res->GetTable() != std::nullopt) {
+            memdb::printTable(std::cout, res->GetTable().value());
+        }
     } else {
         std::cout << res->GetString() << std::endl;
     }

@@ -3,6 +3,7 @@
 //
 #include "memdb-lib.h"
 #include <iostream>
+#include <iomanip>
 
 std::shared_ptr<memdb::QueryResult> memdb::Database::execute(const std::string &query) {
 //    auto* result = new QueryResult();
@@ -71,4 +72,61 @@ void memdb::QueryResult::SetTable(const std::shared_ptr<Table> &tablePtr) {
     queryResTable_ = *tablePtr;
 }
 
+void memdb::printTable(std::ostream& os, const Table& table) {
+    const int columnWidth = 20;
+
+    THeader header = table.getHeader();
+    const auto& columns = header.columns;
+
+    os << "+";
+    for (int i = 0; i < columns.size(); ++i) {
+        os << std::setw(columnWidth) << std::setfill('-') << std::left << "-" << "+";
+    }
+    os << std::endl;
+
+    os << "|";
+    for (const auto& column : columns) {
+        os << std::setw(columnWidth) << std::setfill(' ') << std::left << column.name << "|";
+    }
+    os << std::endl;
+
+    os << "|";
+    for (const auto& column : columns) {
+        os << std::setw(columnWidth) << std::setfill(' ') << std::left << "(" + g_DbTypeToStr[column.type] + ")" << "|";
+    }
+    os << std::endl;
+
+    os << "+";
+    for (size_t i = 0; i < columns.size(); ++i) {
+        os << std::setw(columnWidth) << std::setfill('-') << std::left << "-" << "+";
+    }
+    os << std::endl;
+
+    for (size_t i = 0; i < table.getSize(); ++i) {
+        Table::row_t row = table.getRow(i);
+        os << "|";
+        for (const auto& cell : row) {
+            std::visit([&](auto&& val) {
+                std::string cellContent;
+                if constexpr (std::is_same_v<std::decay_t<decltype(val)>, int32_t>) {
+                    cellContent = std::to_string(val);
+                } else if constexpr (std::is_same_v<std::decay_t<decltype(val)>, bool>) {
+                    cellContent = val ? "true" : "false";
+                } else if constexpr (std::is_same_v<std::decay_t<decltype(val)>, std::string>) {
+                    cellContent = val;
+                } else if constexpr (std::is_same_v<std::decay_t<decltype(val)>, bytes>) {
+                    cellContent = std::string(val.begin(), val.end());
+                }
+                os << std::setw(columnWidth) << std::setfill(' ') << std::left << cellContent << "|";
+            }, cell);
+        }
+        os << std::endl;
+    }
+
+    os << "+";
+    for (size_t i = 0; i < columns.size(); ++i) {
+        os << std::setw(columnWidth) << std::setfill('-') << std::left << "-" << "+";
+    }
+    os << std::endl;
+}
 
