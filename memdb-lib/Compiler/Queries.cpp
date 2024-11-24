@@ -245,6 +245,9 @@ Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t
                 return processComparison(op, leftRes, rightRes);
             }
             if (op == "+" || op == "-" || op == "*" || op == "/" || op == "%") {
+                if (op == "+" && std::holds_alternative<std::string>(leftRes)) {
+                    return std::get<std::string>(leftRes) + std::get<std::string>(rightRes);
+                }
                 return processOperation(op, leftRes, rightRes);
             }
             if (op == "&&" || op == "||" || op == "^^") {
@@ -343,6 +346,24 @@ void QUpdate::exec(Runtime &rt) {
                 curRow[colIdx] = assignRes;
             }
             table->setRow(curRow, rowIdx);
+        }
+    }
+}
+
+void QDelete::exec(Runtime &rt) {
+    auto table = rt.getTable();
+    auto header = table->getHeader();
+
+    for (int idx = static_cast<int>(table->getSize()) - 1; idx >= 0; --idx) {
+        auto curRow = table->getRow(idx);
+
+        auto conditionRes = conditionExpr_->getResult(header, curRow);
+        if (!std::holds_alternative<bool>(conditionRes)) {
+            throw RuntimeException("condition expr must be boolean");
+        }
+
+        if (std::get<bool>(conditionRes)) {
+            table->eraseRow(idx);
         }
     }
 }

@@ -64,8 +64,9 @@ public:
     size_t  getSize()           const { return table_.size(); }
     row_t   getRow(int idx)     const { return table_[idx]; }
 
+    void eraseRow(int idx)          { table_.erase(table_.begin() + idx); }
     void setRow(row_t row, int idx) { table_[idx] = std::move(row); }
-    void pushRow(const row_t& row) { table_.push_back(row); };
+    void pushRow(const row_t& row)  { table_.push_back(row); };
 private:
     std::vector<row_t> table_;
     THeader header_;

@@ -122,7 +122,25 @@ void Compiler::Query() {
         auto condition = Expression();
 
         runtime_.putQuery(std::make_shared<QUpdate>(assigns, condition));
-    } else {
+    } else if (curLexemeItr_->str == "delete") {
+        ReadLexeme();
+        if (curLexemeItr_->type != ELexemeType::Identifier) {
+            throw CompileException(*curLexemeItr_, "expected table name");
+        }
+
+        runtime_.putQuery(std::make_shared<QTable>(curLexemeItr_->str));
+        ReadLexeme();
+
+        if (LexemeDataToStr(*curLexemeItr_) != "where") {
+            throw CompileException(*curLexemeItr_, R"(expected keyword 'where')");
+        }
+
+        ReadLexeme();
+        auto condition = Expression();
+
+        runtime_.putQuery(std::make_shared<QDelete>(condition));
+    }
+    else {
         throw CompileException(*curLexemeItr_, "Unknown query type");
     }
 }

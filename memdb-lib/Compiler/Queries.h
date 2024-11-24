@@ -19,6 +19,7 @@ enum class EQueryType : int32_t {
     QSelect,
     QUpdate,
     QJoin,
+    QDelete,
     QTable,
 };
 
@@ -125,6 +126,18 @@ public:
 private:
     EQueryType type_;
     std::vector<assign_t> assigns_;
+    std::shared_ptr<OperationNode> conditionExpr_;
+};
+
+class QDelete : public IQuery {
+public:
+    explicit QDelete(std::shared_ptr<OperationNode> conditionExpr) : type_(EQueryType::QDelete), conditionExpr_(std::move(conditionExpr)) {}
+
+    void exec(Runtime &rt) override;
+    EQueryType getType() final { return type_; }
+
+private:
+    EQueryType type_;
     std::shared_ptr<OperationNode> conditionExpr_;
 };
 
