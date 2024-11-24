@@ -70,6 +70,10 @@ void QInsert::exec(Runtime& rt) {
                 for (const auto& attr : tHeader.columns[idx].attributes) {
                     if (attr == EAttributes::AUTOINCREMENT) {
                         flag = true;
+                        if (table->getSize() == 0) {
+                            throw RuntimeException("column: " + tHeader.columns[idx].name +
+                                                    " has AUTOINCREMENT attr but the table is empty");
+                        }
                         if (std::holds_alternative<int32_t>(table->back()[idx])) {
                             row[idx] = std::get<int32_t>(table->back()[idx]) + 1;
                         } else {
@@ -308,5 +312,37 @@ void QSelect::exec(Runtime& rt) {
 }
 
 void QUpdate::exec(Runtime &rt) {
+    auto table = rt.getTable();
+    auto header = table->getHeader();
 
+    for (int rowIdx = 0; rowIdx < table->getSize(); ++rowIdx) {
+        auto curRow = table->getRow(rowIdx);
+
+        auto conditionRes = conditionExpr_->getResult(header, curRow);
+        if (!std::holds_alternative<bool>(conditionRes)) {
+            throw RuntimeException("condition expr must be boolean");
+        }
+
+        if (std::get<bool>(conditionRes)) {
+            for (const auto& assign : assigns_) {
+                int colIdx = -1;
+                for (int i = 0; i < curRow.size(); ++i) {
+                    if (header.columns[i].name == assign.first) {
+                        colIdx = i;
+                        break;
+                    }
+                }
+                if (colIdx == -1) {
+                    throw RuntimeException("unknown column: " + assign.first + " in set block");
+                }
+
+                auto assignRes = assign.second->getResult(header, curRow);
+                if (curRow[colIdx].index() != assignRes.index()) {
+                    throw RuntimeException("column: " + assign.first + " and set expression have different types");
+                }
+                curRow[colIdx] = assignRes;
+            }
+            table->setRow(curRow, rowIdx);
+        }
+    }
 }

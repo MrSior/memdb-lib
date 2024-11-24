@@ -97,6 +97,31 @@ void Compiler::Query() {
         auto condition = Expression();
 
         runtime_.putQuery(std::make_shared<QSelect>(columns, condition));
+    } else if (curLexemeItr_->str == "update") {
+        ReadLexeme();
+
+        if (curLexemeItr_->type != ELexemeType::Identifier) {
+            throw CompileException(*curLexemeItr_, "expected table name");
+        }
+
+        runtime_.putQuery(std::make_shared<QTable>(curLexemeItr_->str));
+        ReadLexeme();
+
+        if (LexemeDataToStr(*curLexemeItr_) != "set") {
+            throw CompileException(*curLexemeItr_, R"(expected keyword 'set')");
+        }
+        ReadLexeme();
+
+        auto assigns = Assignments();
+
+        if (LexemeDataToStr(*curLexemeItr_) != "where") {
+            throw CompileException(*curLexemeItr_, R"(expected keyword 'where')");
+        }
+
+        ReadLexeme();
+        auto condition = Expression();
+
+        runtime_.putQuery(std::make_shared<QUpdate>(assigns, condition));
     } else {
         throw CompileException(*curLexemeItr_, "Unknown query type");
     }
@@ -366,20 +391,31 @@ std::vector<QUpdate::assign_t> Compiler::Assignments() {
     std::vector<QUpdate::assign_t> assigns;
 
     auto readAssign = [&]() -> QUpdate::assign_t {
-        if (LexemeDataToStr(*curLexemeItr_) == ",") {
+        if (LexemeDataToStr(*curLexemeItr_) == "," || LexemeDataToStr(*curLexemeItr_) == "where") {
             throw CompileException(*curLexemeItr_, "expected assignment");
         }
-        QUpdate::assign_t assign = {"", nullptr};
         if (curLexemeItr_->type != ELexemeType::Identifier) {
             throw CompileException(*curLexemeItr_, "expected identifier");
         }
+        QUpdate::assign_t assign = {curLexemeItr_->str, nullptr};
         ReadLexeme();
         if (LexemeDataToStr(*curLexemeItr_) != "=") {
             throw CompileException(*curLexemeItr_, R"(expected '=')");
         }
         ReadLexeme();
+        assign.second = Compiler::Expression();
+        return assign;
     };
 
-    return std::vector<QUpdate::assign_t>();
+    while (true) {
+        assigns.push_back(readAssign());
+        if (LexemeDataToStr(*curLexemeItr_) == ",") {
+            ReadLexeme();
+        } else if (LexemeDataToStr(*curLexemeItr_) == "where") {
+            break;
+        }
+    }
+
+    return assigns;
 }
 
