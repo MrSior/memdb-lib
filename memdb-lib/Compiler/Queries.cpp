@@ -306,3 +306,7 @@ void QSelect::exec(Runtime& rt) {
     }
     rt.putTable(resTable);
 }
+
+void QUpdate::exec(Runtime &rt) {
+
+}

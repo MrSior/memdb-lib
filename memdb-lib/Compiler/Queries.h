@@ -112,4 +112,20 @@ private:
     std::shared_ptr<OperationNode> conditionExpr_;
 };
 
+class QUpdate : public IQuery {
+public:
+    using assign_t = std::pair<std::string, std::shared_ptr<OperationNode>>;
+
+    QUpdate(std::vector<assign_t> assigns,
+            std::shared_ptr<OperationNode> conditionExpr) : type_(EQueryType::QUpdate),
+            assigns_(std::move(assigns)), conditionExpr_(std::move(conditionExpr)) {}
+
+    void exec(Runtime &rt) override;
+    EQueryType getType() final { return type_; }
+private:
+    EQueryType type_;
+    std::vector<assign_t> assigns_;
+    std::shared_ptr<OperationNode> conditionExpr_;
+};
+
 #endif //DATABASE_QUERIES_H

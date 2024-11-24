@@ -42,6 +42,7 @@ private:
     std::vector<Column> Arguments();
     QInsert::queryData_t Values();
     std::vector<std::string> Columns();
+    std::vector<QUpdate::assign_t> Assignments();
 
     std::map<int, std::vector<std::string>> exprLevelToOperations_ = {
             {1, {"||"}},

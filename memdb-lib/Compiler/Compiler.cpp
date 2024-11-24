@@ -198,13 +198,13 @@ std::vector<Column> Compiler::Arguments() {
                     col.defaultValue = (int32_t)curLexemeItr_->i64;
                     break;
                 case ELexemeType::LiteralBytes:
-                    if (curLexemeItr_->str.length() != col.size) {
+                    if (curLexemeItr_->str.length() > col.size) {
                         throw CompileException(*curLexemeItr_, "incorrect default value");
                     }
                     col.defaultValue = bytes(curLexemeItr_->str.begin(), curLexemeItr_->str.end());
                     break;
                 case ELexemeType::LiteralStr:
-                    if (curLexemeItr_->str.length() != col.size) {
+                    if (curLexemeItr_->str.length() > col.size) {
                         throw CompileException(*curLexemeItr_, "incorrect default value");
                     }
                     col.defaultValue = curLexemeItr_->str;
@@ -360,5 +360,26 @@ std::shared_ptr<OperationNode> Compiler::Expression(int level) {
         }
     }
     throw CompileException(*curLexemeItr_, "invalid level during parsing expression");
+}
+
+std::vector<QUpdate::assign_t> Compiler::Assignments() {
+    std::vector<QUpdate::assign_t> assigns;
+
+    auto readAssign = [&]() -> QUpdate::assign_t {
+        if (LexemeDataToStr(*curLexemeItr_) == ",") {
+            throw CompileException(*curLexemeItr_, "expected assignment");
+        }
+        QUpdate::assign_t assign = {"", nullptr};
+        if (curLexemeItr_->type != ELexemeType::Identifier) {
+            throw CompileException(*curLexemeItr_, "expected identifier");
+        }
+        ReadLexeme();
+        if (LexemeDataToStr(*curLexemeItr_) != "=") {
+            throw CompileException(*curLexemeItr_, R"(expected '=')");
+        }
+        ReadLexeme();
+    };
+
+    return std::vector<QUpdate::assign_t>();
 }
 
