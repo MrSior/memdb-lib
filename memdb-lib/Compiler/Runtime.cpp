@@ -11,7 +11,7 @@ std::shared_ptr<IQuery> Runtime::getQuery() {
 }
 
 std::shared_ptr<Table> Runtime::getTable() {
-    auto tmp = tablesQueue_.front();
+    auto tmp = tablesQueue_.top();
     tablesQueue_.pop();
     return tmp;
 }

@@ -26,7 +26,7 @@ public:
     bool isHasResTable() { return !tablesQueue_.empty(); }
 private:
     std::queue<std::shared_ptr<IQuery>> queriesQueue_;
-    std::queue<std::shared_ptr<Table>> tablesQueue_;
+    std::stack<std::shared_ptr<Table>> tablesQueue_;
 };
 
 
