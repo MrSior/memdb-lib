@@ -241,7 +241,7 @@ std::vector<Column> Compiler::Arguments() {
                     col.defaultValue = (int32_t)curLexemeItr_->i64;
                     break;
                 case ELexemeType::LiteralBytes:
-                    if (curLexemeItr_->str.length() > col.size) {
+                    if ((curLexemeItr_->str.length() - 2) / 2 + ((curLexemeItr_->str.length() - 2) % 2) > col.size) {
                         throw CompileException(*curLexemeItr_, "incorrect default value");
                     }
                     col.defaultValue = bytes(curLexemeItr_->str.begin(), curLexemeItr_->str.end());

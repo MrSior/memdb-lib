@@ -76,23 +76,28 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
-    auto res = db.execute(R"(create table users ({autoincrement} id : int32, is_admin: bool = false, name: string[20] = "bbb"))");
-
-    res = db.execute("insert (3,true,) to users");
+    auto res = db.execute(R"(create table users ({autoincrement} id : int32, is_admin: bool = false, name: string[20] = "bbb", hash: bytes[4] = 0xabcd))");
     if (res->isOk()) {
         std::cout << "Complete" << std::endl;
     } else {
         std::cout << res->GetString() << std::endl;
     }
 
-    res = db.execute("insert (,true,) to users");
+    res = db.execute("insert (,true,,) to users");
     if (res->isOk()) {
         std::cout << "Complete" << std::endl;
     } else {
         std::cout << res->GetString() << std::endl;
     }
 
-    res = db.execute("update users set is_admin = false, id = id * 2 + 1, name = name + \"_abc\" where true");
+    res = db.execute("insert (,true, \"12345\", 0xabceabce) to users");
+    if (res->isOk()) {
+        std::cout << "Complete" << std::endl;
+    } else {
+        std::cout << res->GetString() << std::endl;
+    }
+
+    res = db.execute("update users set is_admin = false, id = id * 2 + 1, name = name + \"_abc\" where |hash| > 2");
     if (res->isOk()) {
         std::cout << "Complete" << std::endl;
     } else {
@@ -106,7 +111,7 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
-    res = db.execute("select id, is_admin, name from users where true");
+    res = db.execute("select id, is_admin, name, hash from users where true");
     if (res->isOk()) {
         if (res->GetTable() != std::nullopt) {
             memdb::printTable(std::cout, res->GetTable().value());

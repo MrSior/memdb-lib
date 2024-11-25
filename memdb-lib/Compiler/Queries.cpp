@@ -55,10 +55,24 @@ void QInsert::exec(Runtime& rt) {
                         continue;
                     }
                     if (std::holds_alternative<std::string>(values_[idx].second)) {
+                        size_t strSize = std::get<std::string>(values_[idx].second).size();
+                        if (strSize > tHeader.columns[i].size) {
+                            throw RuntimeException("string: " + std::get<std::string>(values_[idx].second) +
+                                                   " to insert is too long: " + std::to_string(strSize) + " > " +
+                                                   std::to_string(tHeader.columns[i].size));
+                        }
                         row[i] = std::get<std::string>(values_[idx].second);
                         continue;
                     }
                     if (std::holds_alternative<bytes>(values_[idx].second)) {
+                        size_t charSize = std::get<bytes>(values_[idx].second).size() - 2;
+                        size_t actualSize = charSize / 2 + (charSize % 2);
+                        if (actualSize > tHeader.columns[i].size) {
+                            auto toInsert = std::get<bytes>(values_[idx].second);
+                            throw RuntimeException("bytes seq: " + std::string(toInsert.begin(), toInsert.end()) +
+                                                   " to insert is too long: " + std::to_string(actualSize) + " > " +
+                                                   std::to_string(tHeader.columns[i].size));
+                        }
                         row[i] = std::get<bytes>(values_[idx].second);
                         continue;
                     }
@@ -71,13 +85,15 @@ void QInsert::exec(Runtime& rt) {
                     if (attr == EAttributes::AUTOINCREMENT) {
                         flag = true;
                         if (table->getSize() == 0) {
-                            throw RuntimeException("column: " + tHeader.columns[idx].name +
-                                                    " has AUTOINCREMENT attr but the table is empty");
-                        }
-                        if (std::holds_alternative<int32_t>(table->back()[idx])) {
-                            row[idx] = std::get<int32_t>(table->back()[idx]) + 1;
+//                            throw RuntimeException("column: " + tHeader.columns[idx].name +
+//                                                    " has AUTOINCREMENT attr but the table is empty");
+                            row[idx] = 0;
                         } else {
-                            throw RuntimeException("AUTOINCREMENT attr for not-int column");
+                            if (std::holds_alternative<int32_t>(table->back()[idx])) {
+                                row[idx] = std::get<int32_t>(table->back()[idx]) + 1;
+                            } else {
+                                throw RuntimeException("AUTOINCREMENT attr for not-int column");
+                            }
                         }
                         break;
                     }
@@ -101,10 +117,24 @@ void QInsert::exec(Runtime& rt) {
                         continue;
                     }
                     if (std::holds_alternative<std::string>(values_[idx].second)) {
+                        size_t strSize = std::get<std::string>(values_[idx].second).size();
+                        if (strSize > tHeader.columns[idx].size) {
+                            throw RuntimeException("string: " + std::get<std::string>(values_[idx].second) +
+                                                   " to insert is too long: " + std::to_string(strSize) + " > " +
+                                                   std::to_string(tHeader.columns[idx].size));
+                        }
                         row[idx] = std::get<std::string>(values_[idx].second);
                         continue;
                     }
                     if (std::holds_alternative<bytes>(values_[idx].second)) {
+                        size_t charSize = std::get<bytes>(values_[idx].second).size() - 2;
+                        size_t actualSize = charSize / 2 + (charSize % 2);
+                        if (actualSize > tHeader.columns[idx].size) {
+                            auto toInsert = std::get<bytes>(values_[idx].second);
+                            throw RuntimeException("bytes seq: " + std::string(toInsert.begin(), toInsert.end()) +
+                                                   " to insert is too long: " + std::to_string(actualSize) + " > " +
+                                                   std::to_string(tHeader.columns[idx].size));
+                        }
                         row[idx] = std::get<bytes>(values_[idx].second);
                         continue;
                     }
@@ -138,10 +168,11 @@ Table::cell_t OperationNode::getResult(const THeader& header, const Table::row_t
                 }
             }
             if (LexemeDataToStr(lexeme) == "#") {
-                if (std::holds_alternative<bool>(leftRes)) {
+                if (std::holds_alternative<std::string>(leftRes)) {
                     return (int32_t)(std::get<std::string>(leftRes)).length();
                 } else if (std::holds_alternative<bytes>(leftRes)) {
-                    return static_cast<int32_t>((std::get<bytes>(leftRes).size() - 2) / 2);
+                    size_t lengthInChars = std::get<bytes>(leftRes).size() - 2;
+                    return static_cast<int32_t>(lengthInChars / 2 + (lengthInChars) % 2);
                 }else {
                     throw RuntimeException("invalid operand type for \'#\'");
                 }

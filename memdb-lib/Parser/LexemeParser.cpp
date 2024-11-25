@@ -175,6 +175,23 @@ std::vector<Lexeme> LexemeParser::GetLexemes(const std::string &input) {
 
     result.push_back(Lexeme(ELexemeType::ProgramEnd, cur_line,
                             stream.tell() - line_start_pos));
+    // |str| --> #(str)
+    bool isFoundFirst = false;
+    for (int i = 0; i < result.size(); ++i) {
+        if (LexemeDataToStr(result[i]) == "|") {
+            if (!isFoundFirst) {
+                isFoundFirst = true;
+                result[i] = Lexeme(ELexemeType::RoundBrackOp, char('('), result[i].line, result[i].pos);
+                result.insert(result.begin() + i, Lexeme(ELexemeType::Operator, std::string("#"), result[i].line, result[i].pos - 1));
+                ++i;
+            } else {
+                isFoundFirst = false;
+                result[i] = Lexeme(ELexemeType::RoundBrackCl, char(')'), result[i].line, result[i].pos);
+            }
+        }
+    }
+
+
     return result;
 };
 
