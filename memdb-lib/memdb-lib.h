@@ -48,17 +48,33 @@ namespace memdb {
         std::optional<Table> queryResTable_;
     };
 
+#ifdef DB_DEBUG
+    class DatabaseCtl;
+#endif
+
     class Database {
     public:
         Database() = default;
 
         std::shared_ptr<QueryResult> execute(const std::string& query);
+
+#ifdef DB_DEBUG
+        friend DatabaseCtl;
+#endif
     private:
         LexemeParser lexeme_parser_;
         Compiler compiler_;
         std::map<std::string, std::shared_ptr<Table>> tableRegistry_;
     };
 
+#ifdef DB_DEBUG
+    class DatabaseCtl {
+    public:
+        static std::map<std::string, std::shared_ptr<Table>> getTableRegistry(Database& db) {
+            return db.tableRegistry_;
+        }
+    };
+#endif
 
     void printTable(std::ostream& os, const Table& table);
 };

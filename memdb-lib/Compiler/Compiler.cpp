@@ -260,7 +260,7 @@ std::vector<Column> Compiler::Arguments() {
         }
 
         if (curLexemeItr_->type != ELexemeType::RoundBrackCl && LexemeDataToStr(*curLexemeItr_) != ",") {
-            throw CompileException(*curLexemeItr_, "expected \',\' as separator");
+            throw CompileException(*curLexemeItr_, R"(expected ',' as separator or ')')");
         }
         columns.push_back(col);
     }

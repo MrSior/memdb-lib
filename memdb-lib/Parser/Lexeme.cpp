@@ -13,6 +13,9 @@ std::string LexemeDataToStr(const Lexeme &lexeme) {
     if ((int32_t)lexeme.type == (int32_t)ELexemeType::LiteralBool) {
         return ((bool)lexeme.i64 ? "true" : "false");
     }
+    if (lexeme.type == ELexemeType::ProgramEnd) {
+        return "__program_end__";
+    }
     return lexeme.str;
 }
 
