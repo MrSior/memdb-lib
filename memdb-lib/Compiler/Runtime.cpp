@@ -11,8 +11,8 @@ std::shared_ptr<IQuery> Runtime::getQuery() {
 }
 
 std::shared_ptr<Table> Runtime::getTable() {
-    auto tmp = tablesQueue_.top();
-    tablesQueue_.pop();
+    auto tmp = tablesStack_.top();
+    tablesStack_.pop();
     return tmp;
 }
 
@@ -21,7 +21,7 @@ void Runtime::putQuery(const std::shared_ptr<IQuery>& query_ptr) {
 }
 
 void Runtime::putTable(const std::shared_ptr<Table>& table_ptr) {
-    tablesQueue_.push(table_ptr);
+    tablesStack_.push(table_ptr);
 }
 
 void Runtime::Run(std::map<std::string, std::shared_ptr<Table>>& tRegistry) {
