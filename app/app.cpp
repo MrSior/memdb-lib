@@ -114,6 +114,12 @@ int main() {
     res = db.execute("select id, is_admin, name, hash from users where true");
     if (res->isOk()) {
         if (res->GetTable() != std::nullopt) {
+            auto table = res->GetTable().value();
+            std::cout << table.getSize() << std::endl;
+            for (auto& row : table) {
+                auto val = table.getCell<bytes>(row, "hash");
+                std::cout << std::string(val.begin(), val.end()) << std::endl;
+            }
             memdb::printTable(std::cout, res->GetTable().value());
         }
     } else {
