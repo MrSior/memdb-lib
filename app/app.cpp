@@ -126,9 +126,15 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
-    auto res = db.execute(R"(create table users ({}id: int32, login: string[32], hash: bytes[8], is_admin: bool))");
-    if (!res->isOk()) {
-        std::cout << res->GetString();
+    auto res = db.execute(R"(create table users (id: int32 = 1, login: string[32] = "abc", hash: bytes[8] = 0x9ab, is_admin: bool = true))");
+    db.execute(R"(insert (id = 2, hash = 0xabc, login = "abc_333", is_admin = false) to users)");
+    db.execute(R"(insert (id = 0, hash = 0xabc, login = "cde", is_admin = true) to users)");
+    db.execute(R"(insert (id = 1, hash = 0xabc, login = "abc", is_admin = true) to users)");
+    res = db.execute(R"(update users set id = 2 * id + 3, login = login asd + "_changed" where id > 0)");
+    if (res->isOk()) {
+        std::cout << "OK";
+    } else {
+        std::cout << res->GetString() << std::endl;
     }
 
     return 0;

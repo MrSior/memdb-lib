@@ -431,6 +431,8 @@ std::vector<QUpdate::assign_t> Compiler::Assignments() {
             ReadLexeme();
         } else if (LexemeDataToStr(*curLexemeItr_) == "where") {
             break;
+        } else {
+            throw CompileException(*curLexemeItr_, R"(expected separator ',' or keyword 'where')");
         }
     }
 

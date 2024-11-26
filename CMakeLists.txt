@@ -37,8 +37,8 @@ target_link_libraries(lib-tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(lib-tests PRIVATE lib)
 
 add_custom_target(run-lib-tests
-    COMMAND lib-tests "[factorial]"
+    COMMAND lib-tests "[basic]"
     DEPENDS lib-tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "running tests with tag [factorial]"
+    COMMENT "running tests with tag [basic]"
 )
