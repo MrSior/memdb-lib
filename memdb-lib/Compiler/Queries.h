@@ -141,4 +141,15 @@ private:
     std::shared_ptr<OperationNode> conditionExpr_;
 };
 
+class QJoin : public IQuery {
+public:
+    explicit QJoin(std::shared_ptr<OperationNode> conditionExpr) : type_(EQueryType::QJoin), conditionExpr_(std::move(conditionExpr)) {}
+
+    void exec(Runtime &rt) override;
+    EQueryType getType() final { return type_; }
+private:
+    EQueryType type_;
+    std::shared_ptr<OperationNode> conditionExpr_;
+};
+
 #endif //DATABASE_QUERIES_H

@@ -76,33 +76,33 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
-    auto res = db.execute(R"(create table users ({autoincrement} id : int32, is_admin: bool = false, name: string[20] = "bbb", hash: bytes[4] = 0xabcd))");
-    if (res->isOk()) {
-        std::cout << "Complete" << std::endl;
-    } else {
-        std::cout << res->GetString() << std::endl;
-    }
-
-    res = db.execute("insert (,true,,) to users");
-    if (res->isOk()) {
-        std::cout << "Complete" << std::endl;
-    } else {
-        std::cout << res->GetString() << std::endl;
-    }
-
-    res = db.execute("insert (,true, \"12345\", 0xabceabce) to users");
-    if (res->isOk()) {
-        std::cout << "Complete" << std::endl;
-    } else {
-        std::cout << res->GetString() << std::endl;
-    }
-
-    res = db.execute("update users set is_admin = false, id = id * 2 + 1, name = name + \"_abc\" where |hash| > 2");
-    if (res->isOk()) {
-        std::cout << "Complete" << std::endl;
-    } else {
-        std::cout << res->GetString() << std::endl;
-    }
+//    auto res = db.execute(R"(create table users ({autoincrement} id : int32, is_admin: bool = false, name: string[20] = "bbb", hash: bytes[4] = 0xabcd))");
+//    if (res->isOk()) {
+//        std::cout << "Complete" << std::endl;
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
+//
+//    res = db.execute("insert (,true,,) to users");
+//    if (res->isOk()) {
+//        std::cout << "Complete" << std::endl;
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
+//
+//    res = db.execute("insert (,true, \"12345\", 0xabceabce) to users");
+//    if (res->isOk()) {
+//        std::cout << "Complete" << std::endl;
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
+//
+//    res = db.execute("update users set is_admin = false, id = id * 2 + 1, name = name + \"_abc\" where |hash| > 2");
+//    if (res->isOk()) {
+//        std::cout << "Complete" << std::endl;
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
 
 //    res = db.execute("delete users where id >= 7");
 //    if (res->isOk()) {
@@ -111,20 +111,20 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
-    res = db.execute("select id, is_admin, name, hash from users where true");
-    if (res->isOk()) {
-        if (res->GetTable() != std::nullopt) {
-            auto table = res->GetTable().value();
-            std::cout << table.getSize() << std::endl;
-            for (auto& row : table) {
-                auto val = table.getCell<bytes>(row, "hash");
-                std::cout << std::string(val.begin(), val.end()) << std::endl;
-            }
-            memdb::printTable(std::cout, res->GetTable().value());
-        }
-    } else {
-        std::cout << res->GetString() << std::endl;
-    }
+//    res = db.execute("select id, is_admin, name, hash from users where true");
+//    if (res->isOk()) {
+//        if (res->GetTable() != std::nullopt) {
+//            auto table = res->GetTable().value();
+//            std::cout << table.getSize() << std::endl;
+//            for (auto& row : table) {
+//                auto val = table.getCell<bytes>(row, "hash");
+//                std::cout << std::string(val.begin(), val.end()) << std::endl;
+//            }
+//            memdb::printTable(std::cout, res->GetTable().value());
+//        }
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
 
 //    auto res = db.execute(R"(create table users (id: int32 = 1, login: string[32] = "abc", hash: bytes[8] = 0x9ab, is_admin: bool = true))");
 //    db.execute(R"(insert (id = 2, hash = 0xabc, login = "abc_333", is_admin = false) to users)");
@@ -137,5 +137,23 @@ int main() {
 //        std::cout << res->GetString() << std::endl;
 //    }
 
+    auto res = db.execute(R"(create table users (id: int32, login: string[32], isAdmin:bool))");
+    db.execute(R"(create table posts (id: int32, text: string[32], userId:int32))");
+    db.execute(R"(insert (1, "Jon", true) to users)");
+    db.execute(R"(insert (2, "Peter", false) to users)");
+    db.execute(R"(insert (3, "Ban", true) to users)");
+
+    db.execute(R"(insert (1, "Hello", 2) to posts)");
+    db.execute(R"(insert (2, "Hi", 1) to posts)");
+    db.execute(R"(insert (3, "Privet", 3) to posts)");
+
+    res = db.execute("select users.id, users.login, users.isAdmin, posts.id, posts.text, posts.userId from users join posts on true where true");
+    if (res->isOk()) {
+        if (res->GetTable() != std::nullopt) {
+            memdb::printTable(std::cout, res->GetTable().value());
+        }
+    } else {
+        std::cout << res->GetString() << std::endl;
+    }
     return 0;
 }

@@ -151,6 +151,20 @@ void Compiler::Table() {
         ReadLexeme();
 
         // here goes join case parsing logic
+        if (LexemeDataToStr(*curLexemeItr_) != "join") {
+            return;
+        }
+        ReadLexeme();
+        Table();
+
+        if (LexemeDataToStr(*curLexemeItr_) != "on") {
+            throw CompileException(*curLexemeItr_, "expected keyword on");
+        }
+        ReadLexeme();
+
+        auto condition = Expression();
+
+        runtime_.putQuery(std::make_shared<QJoin>(condition));
         return;
     }
     if (curLexemeItr_->type == ELexemeType::Keyword &&
@@ -398,7 +412,19 @@ std::shared_ptr<OperationNode> Compiler::Expression(int level) {
                 throw CompileException(*curLexemeItr_, "expected operand");
             }
             auto res = std::make_shared<OperationNode>(*curLexemeItr_);
-            ReadLexeme();
+            if (curLexemeItr_->type == ELexemeType::Identifier) {
+                ReadLexeme();
+                if (LexemeDataToStr(*curLexemeItr_) == ".") {
+                    ReadLexeme();
+                    if (curLexemeItr_->type != ELexemeType::Identifier) {
+                        throw CompileException(*curLexemeItr_, "expected identifier name");
+                    }
+                    (*res).lexeme.str += "." + curLexemeItr_->str;
+                    ReadLexeme();
+                }
+            } else {
+                ReadLexeme();
+            }
             return res;
         }
     }

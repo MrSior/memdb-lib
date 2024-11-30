@@ -318,11 +318,17 @@ void QSelect::exec(Runtime& rt) {
     THeader resTableHeader;
     std::vector<int> validColsIdx;
     for (const auto& colName : colNames_) {
+        bool isFound = false;
         for (int idx = 0; idx < header.columns.size(); ++idx) {
             if (colName == header.columns[idx].name) {
                 resTableHeader.columns.push_back(header.columns[idx]);
                 validColsIdx.push_back(idx);
+                isFound = true;
+                break;
             }
+        }
+        if (!isFound) {
+            throw RuntimeException("Invalid column name: " + colName);
         }
     }
 
@@ -397,4 +403,46 @@ void QDelete::exec(Runtime &rt) {
             table->eraseRow(idx);
         }
     }
+}
+
+void QJoin::exec(Runtime &rt) {
+    auto tableB = rt.getTable();
+    auto headerB = tableB->getHeader();
+
+    auto tableA = rt.getTable();
+    auto headerA = tableA->getHeader();
+
+    THeader joinedHeader;
+    joinedHeader.tName = headerA.tName + "+" + headerB.tName;
+    std::for_each(headerA.columns.begin(), headerA.columns.end(), [&](Column& col) {
+        joinedHeader.columns.push_back(col);
+        joinedHeader.columns.back().name = headerA.tName + "." + col.name;
+    });
+
+    std::for_each(headerB.columns.begin(), headerB.columns.end(), [&](Column& col) {
+        joinedHeader.columns.push_back(col);
+        joinedHeader.columns.back().name = headerB.tName + "." + col.name;
+    });
+
+    auto joinedTable = std::make_shared<Table>(joinedHeader);
+
+    for (const auto& rowA : *tableA) {
+        for (const auto& rowB : *tableB) {
+            Table::row_t joinedRow = rowA;
+            for (auto& cell : rowB) {
+                joinedRow.push_back(cell);
+            }
+
+            auto conditionRes = conditionExpr_->getResult(joinedHeader, joinedRow);
+            if (!std::holds_alternative<bool>(conditionRes)) {
+                throw RuntimeException("condition expr must be boolean");
+            }
+
+            if (std::get<bool>(conditionRes)) {
+                joinedTable->pushRow(joinedRow);
+            }
+        }
+    }
+
+    rt.putTable(joinedTable);
 }

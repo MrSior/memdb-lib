@@ -8,4 +8,4 @@
 - ```./db-app``` - запуск программы в ```app.cpp```
 - ```./lib-tests``` - запуск всех тестов в ```test.cpp```
 - ```./lib-tests "[basic]"``` - запуск тестов с тегом ```[basic]``` в ```test.cpp```
-- ```./lib-tests "[benchmark]"``` - запуск тестов с тегом ```[benchmark]``` в ```test.cpp```
+- ```./lib-tests "[benchmark]"``` - запуск тестов с тегом ```[benchmark]``` в ```test.cpp``` (их пока нет)
