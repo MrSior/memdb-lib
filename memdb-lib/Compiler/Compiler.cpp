@@ -349,7 +349,7 @@ std::vector<std::string> Compiler::Columns() {
         }
         cols.push_back(curLexemeItr_->str);
         ReadLexeme();
-        if (LexemeDataToStr(*curLexemeItr_) == ".") {
+        while (LexemeDataToStr(*curLexemeItr_) == ".") {
             cols.back() += ".";
             ReadLexeme();
             if (curLexemeItr_->type != ELexemeType::Identifier) {
@@ -414,7 +414,7 @@ std::shared_ptr<OperationNode> Compiler::Expression(int level) {
             auto res = std::make_shared<OperationNode>(*curLexemeItr_);
             if (curLexemeItr_->type == ELexemeType::Identifier) {
                 ReadLexeme();
-                if (LexemeDataToStr(*curLexemeItr_) == ".") {
+                while (LexemeDataToStr(*curLexemeItr_) == ".") {
                     ReadLexeme();
                     if (curLexemeItr_->type != ELexemeType::Identifier) {
                         throw CompileException(*curLexemeItr_, "expected identifier name");

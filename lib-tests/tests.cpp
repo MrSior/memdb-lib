@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
 
+#include <sstream>
+
 #define DB_DEBUG
 #include "memdb-lib.h"
 
@@ -289,4 +291,168 @@ TEST_CASE("Delete from table test", "[basic][query]") {
 
     REQUIRE(table->getCell<int>(table->getRow(1), "id") == 1);
     REQUIRE(table->getCell<std::string>(table->getRow(1), "login") == "abc");
+}
+
+TEST_CASE("Join test", "[basic][lang-construction]") {
+    memdb::Database db;
+
+    SECTION("Join without condition") {
+        auto res = db.execute(R"(create table users (id: int32, login: string[32], isAdmin:bool))");
+        db.execute(R"(create table posts (id: int32, text: string[32], userId:int32))");
+        db.execute(R"(insert (1, "Jon", true) to users)");
+        db.execute(R"(insert (2, "Peter", false) to users)");
+        db.execute(R"(insert (3, "Ban", true) to users)");
+
+        db.execute(R"(insert (1, "Hello", 2) to posts)");
+        db.execute(R"(insert (2, "Hi", 1) to posts)");
+        db.execute(R"(insert (3, "Privet", 3) to posts)");
+
+        std::stringstream ss;
+        res = db.execute(
+                "select users.id, users.login, users.isAdmin, posts.id, posts.text, posts.userId from users join posts on true where true");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == true);
+        REQUIRE(res->GetTable() != std::nullopt);
+
+        memdb::printTable(ss, res->GetTable().value());
+        REQUIRE(ss.str() ==
+                "+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
+                "|users.id            |users.login         |users.isAdmin       |posts.id            |posts.text          |posts.userId        |\n"
+                "|(int32)             |(string)            |(bool)              |(int32)             |(string)            |(int32)             |\n"
+                "+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n"
+                "|1                   |Jon                 |true                |1                   |Hello               |2                   |\n"
+                "|1                   |Jon                 |true                |2                   |Hi                  |1                   |\n"
+                "|1                   |Jon                 |true                |3                   |Privet              |3                   |\n"
+                "|2                   |Peter               |false               |1                   |Hello               |2                   |\n"
+                "|2                   |Peter               |false               |2                   |Hi                  |1                   |\n"
+                "|2                   |Peter               |false               |3                   |Privet              |3                   |\n"
+                "|3                   |Ban                 |true                |1                   |Hello               |2                   |\n"
+                "|3                   |Ban                 |true                |2                   |Hi                  |1                   |\n"
+                "|3                   |Ban                 |true                |3                   |Privet              |3                   |\n"
+                "+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+\n");
+    }
+
+    SECTION("Join with condition 1") {
+        auto res = db.execute(R"(create table users (id: int32, login: string[32], isAdmin:bool))");
+        db.execute(R"(create table posts (id: int32, text: string[32], userId:int32))");
+        db.execute(R"(insert (0, "Jon", true) to users)");
+        db.execute(R"(insert (1, "Peter", false) to users)");
+        db.execute(R"(insert (2, "Ban", true) to users)");
+
+        db.execute(R"(insert (1, "Hello", 2) to posts)");
+        db.execute(R"(insert (2, "Hi", 1) to posts)");
+        db.execute(R"(insert (3, "Privet", 3) to posts)");
+
+        std::stringstream ss;
+        res = db.execute("select users.id, users.login, posts.id, posts.text from users join posts on users.id < posts.id where true");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == true);
+        REQUIRE(res->GetTable() != std::nullopt);
+
+        memdb::printTable(ss, res->GetTable().value());
+        REQUIRE(ss.str() == "+--------------------+--------------------+--------------------+--------------------+\n"
+                            "|users.id            |users.login         |posts.id            |posts.text          |\n"
+                            "|(int32)             |(string)            |(int32)             |(string)            |\n"
+                            "+--------------------+--------------------+--------------------+--------------------+\n"
+                            "|0                   |Jon                 |1                   |Hello               |\n"
+                            "|0                   |Jon                 |2                   |Hi                  |\n"
+                            "|0                   |Jon                 |3                   |Privet              |\n"
+                            "|1                   |Peter               |2                   |Hi                  |\n"
+                            "|1                   |Peter               |3                   |Privet              |\n"
+                            "|2                   |Ban                 |3                   |Privet              |\n"
+                            "+--------------------+--------------------+--------------------+--------------------+\n");
+    }
+}
+
+TEST_CASE("Nested queries test", "[basic][queries]") {
+    memdb::Database db;
+
+    auto res = db.execute(R"(create table users (id: int32, login: string[32], isAdmin:bool))");
+    db.execute(R"(create table posts (id: int32, text: string[32], userId:int32))");
+    db.execute(R"(create table queries (id: int32, text: string[32], userId:int32))");
+
+    db.execute(R"(insert (1, "Jon", true) to users)");
+    db.execute(R"(insert (2, "Peter", false) to users)");
+    db.execute(R"(insert (3, "Ban", true) to users)");
+
+    db.execute(R"(insert (1, "Hello", 2) to posts)");
+    db.execute(R"(insert (2, "Hi", 1) to posts)");
+    db.execute(R"(insert (3, "Privet", 3) to posts)");
+
+    db.execute(R"(insert (1, "Add book", 2) to queries)");
+    db.execute(R"(insert (2, "Buy apple", 1) to queries)");
+    db.execute(R"(insert (3, "Open window", 3) to queries)");
+
+    res = db.execute("select posts.text, posts.userId, usersqueries.queries.text, usersqueries.users.login from "
+                     "posts join users join queries on users.id = queries.userId on posts.userId = usersqueries.users.id "
+                     "where true");
+    INFO(res->GetString());
+    REQUIRE(res->isOk() == true);
+    REQUIRE(res->GetTable() != std::nullopt);
+
+    std::stringstream ss;
+    memdb::printTable(ss, res->GetTable().value());
+    REQUIRE(ss.str() == "+---------------------------+---------------------------+---------------------------+---------------------------+\n"
+                        "|posts.text                 |posts.userId               |usersqueries.queries.text  |usersqueries.users.login   |\n"
+                        "|(string)                   |(int32)                    |(string)                   |(string)                   |\n"
+                        "+---------------------------+---------------------------+---------------------------+---------------------------+\n"
+                        "|Hello                      |2                          |Add book                   |Peter                      |\n"
+                        "|Hi                         |1                          |Buy apple                  |Jon                        |\n"
+                        "|Privet                     |3                          |Open window                |Ban                        |\n"
+                        "+---------------------------+---------------------------+---------------------------+---------------------------+\n");
+}
+
+
+TEST_CASE("Error check Create table", "[basic][query]") {
+    memdb::Database db;
+
+    SECTION("misspelling") {
+        auto res = db.execute(R"(create table users ({autoincrementsdfsdf, key, unique}id: int32 = 1, is_admin:bool))");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+        REQUIRE(res->GetString() == "Fail: [CE] l:1 p:40 lex: autoincrementsdfsdf ctx: expected column attribute");
+    }
+
+    SECTION("missed separator") {
+        auto res = db.execute(R"(create table users ({autoincrement, key, unique}id: int32 = 1 is_admin:bool))");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+        REQUIRE(res->GetString() == "Fail: [CE] l:1 p:70 lex: is_admin ctx: expected ',' as separator or ')'");
+    }
+
+    SECTION("invalid default value") {
+        auto res = db.execute(R"(create table users ({autoincrement, key, unique}id: int32 = "abc", is_admin:bool))");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+        REQUIRE(res->GetString() == "Fail: [CE] l:1 p:65 lex: abc ctx: incorrect default value");
+    }
+}
+
+TEST_CASE("Error check Insert table", "[basic][query]") {
+    memdb::Database db;
+    auto res = db.execute(R"(create table users (id: int32, login: string[5] = "abc", hash: bytes[4] = 0x9ab, is_admin: bool = true))");
+
+    SECTION("invalid value type") {
+        res = db.execute(R"(insert (id = "123", hash = 0xabc, login = "50", is_admin = false) to users)");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+    }
+
+    SECTION("invalid col name") {
+        res = db.execute(R"(insert (myNumber = 123, hash = 0xabc, login = "50", is_admin = false) to users)");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+    }
+
+    SECTION("String col overflow") {
+        res = db.execute(R"(insert (id = 123, hash = 0xabc, login = "1234567", is_admin = false) to users)");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+    }
+
+    SECTION("Bytes col overflow") {
+        res = db.execute(R"(insert (id = 123, hash = 0x123456789a, login = "a", is_admin = false) to users)");
+        INFO(res->GetString());
+        REQUIRE(res->isOk() == false);
+    }
 }

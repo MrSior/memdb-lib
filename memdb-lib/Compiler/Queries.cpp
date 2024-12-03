@@ -43,15 +43,17 @@ void QInsert::exec(Runtime& rt) {
             if (values_[idx].first.empty()) {
                 throw RuntimeException("All values must be in format <name> = <value>");
             }
-
+            bool wasFound = false;
             for (int i = 0; i < tHeader.columns.size(); ++i) {
                 if (tHeader.columns[i].name == values_[idx].first) {
                     if (std::holds_alternative<int32_t>(values_[idx].second)) {
                         row[i] = std::get<int32_t>(values_[idx].second);
+                        wasFound = true;
                         continue;
                     }
                     if (std::holds_alternative<bool>(values_[idx].second)) {
                         row[i] = std::get<bool>(values_[idx].second);
+                        wasFound = true;
                         continue;
                     }
                     if (std::holds_alternative<std::string>(values_[idx].second)) {
@@ -62,6 +64,7 @@ void QInsert::exec(Runtime& rt) {
                                                    std::to_string(tHeader.columns[i].size));
                         }
                         row[i] = std::get<std::string>(values_[idx].second);
+                        wasFound = true;
                         continue;
                     }
                     if (std::holds_alternative<bytes>(values_[idx].second)) {
@@ -74,9 +77,13 @@ void QInsert::exec(Runtime& rt) {
                                                    std::to_string(tHeader.columns[i].size));
                         }
                         row[i] = std::get<bytes>(values_[idx].second);
+                        wasFound = true;
                         continue;
                     }
                 }
+            }
+            if (!wasFound) {
+                throw RuntimeException("Invalid column name: " + values_[idx].first);
             }
         } else {
             if (std::holds_alternative<std::nullptr_t>(values_[idx].second)) {
@@ -413,7 +420,7 @@ void QJoin::exec(Runtime &rt) {
     auto headerA = tableA->getHeader();
 
     THeader joinedHeader;
-    joinedHeader.tName = headerA.tName + "+" + headerB.tName;
+    joinedHeader.tName = headerA.tName + headerB.tName;
     std::for_each(headerA.columns.begin(), headerA.columns.end(), [&](Column& col) {
         joinedHeader.columns.push_back(col);
         joinedHeader.columns.back().name = headerA.tName + "." + col.name;

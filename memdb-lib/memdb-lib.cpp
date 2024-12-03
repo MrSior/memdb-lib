@@ -73,9 +73,14 @@ void memdb::QueryResult::SetTable(const std::shared_ptr<Table> &tablePtr) {
 }
 
 void memdb::printTable(std::ostream& os, const Table& table) {
-    const int columnWidth = 20;
+    int columnWidth = 20;
 
     THeader header = table.getHeader();
+    for (auto& col : header.columns) {
+        if (columnWidth < col.name.length() + 2) {
+            columnWidth = static_cast<int>(col.name.length()) + 2;
+        }
+    }
     const auto& columns = header.columns;
 
     os << "+";

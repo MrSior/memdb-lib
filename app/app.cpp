@@ -139,6 +139,8 @@ int main() {
 
     auto res = db.execute(R"(create table users (id: int32, login: string[32], isAdmin:bool))");
     db.execute(R"(create table posts (id: int32, text: string[32], userId:int32))");
+    db.execute(R"(create table queries (id: int32, text: string[32], userId:int32))");
+
     db.execute(R"(insert (1, "Jon", true) to users)");
     db.execute(R"(insert (2, "Peter", false) to users)");
     db.execute(R"(insert (3, "Ban", true) to users)");
@@ -147,7 +149,13 @@ int main() {
     db.execute(R"(insert (2, "Hi", 1) to posts)");
     db.execute(R"(insert (3, "Privet", 3) to posts)");
 
-    res = db.execute("select users.id, users.login, users.isAdmin, posts.id, posts.text, posts.userId from users join posts on true where true");
+    db.execute(R"(insert (1, "Add book", 2) to queries)");
+    db.execute(R"(insert (2, "Buy apple", 1) to queries)");
+    db.execute(R"(insert (3, "Open window", 3) to queries)");
+
+    res = db.execute("select posts.text, posts.userId, usersqueries.queries.text, usersqueries.users.login from "
+                     "posts join users join queries on users.id = queries.userId on posts.userId = usersqueries.users.id "
+                     "where true");
     if (res->isOk()) {
         if (res->GetTable() != std::nullopt) {
             memdb::printTable(std::cout, res->GetTable().value());
@@ -155,5 +163,23 @@ int main() {
     } else {
         std::cout << res->GetString() << std::endl;
     }
+
+
+//    auto res = db.execute(R"(create table users (id: int32 = "abc", is_admin:bool))");
+//    if (res->isOk()) {
+//
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
+//    res = db.execute(R"(insert (,true) to users)");
+//    res = db.execute(R"(insert (,true) to users)");
+//    res = db.execute(R"(select id from users where true)");
+//    if (res->isOk()) {
+//        if (res->GetTable() != std::nullopt) {
+//            memdb::printTable(std::cout, res->GetTable().value());
+//        }
+//    } else {
+//        std::cout << res->GetString() << std::endl;
+//    }
     return 0;
 }
