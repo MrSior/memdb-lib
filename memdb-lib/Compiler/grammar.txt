@@ -1,0 +1,45 @@
+<query>         ::= create table <name> ( <arguments> ) |
+                    insert ( <values> ) to <name> |
+                    select <columns> from <table> where <condition> |
+                    update <table> set <assignments> where <condition> |
+                    delete <table> where <condition>
+                    create {ordered | unordered} index on <table> by <simple names>
+
+<join expr>     ::= <table1> join <table2> on <condition>
+<table>         ::= <string> | select <columns> from <table> where <condition> | <join expr>
+
+// For create
+<arguments>     ::= { \{unique | autoincrement | key \} } <name>: <type> [= <value>] {, <arguments>}
+<name>          ::= <string>
+<type>          ::= int32 | bool | string[x] | bytes[x]
+<value>         ::= int_literal | bool_literal | string_literal
+
+// For insert
+<values>        ::= <argument> {, <values>}
+<argument>      ::= NULL | <value> | <name> = <value>
+
+// For select
+<columns>       ::= <simple names> | <relative names>
+<simple names>  ::= <name> {, <simple name>}
+<relative names>::= <name>.<name> {, <relative names>}
+<condition>     ::= <priority 1>
+
+<priority 1>    ::= <priority 2> {<operation 1> <priority 2>}
+<operation 1>   ::= ||
+<priority 2>    ::= <priority 3> {<operation 2> <priority 3>}
+<operation 2>   ::= &&
+<priority 3>    ::= <priority 4> {<operation 3> <priority 4>}
+<operation 3>   ::= == | !=
+<priority 4>    ::= <priority 5> {<operation 4> <priority 5>}
+<operation 4>   ::= <= | >= | > | <
+<priority 5>    ::= <priority 6> {<operation 5> <priority 6>}
+<operation 5>   ::= + | -
+<priority 6>    ::= <priority 7> {<operation 6> <priority 7>}
+<operation 6>   ::= * | / | // | %
+<priority 7>    ::= <operation 7> <priority 8> | <priority 8>
+<operation 7>   ::= - | ! | #                                       // |str| --> #(str)
+<priority 8>    ::= <operand > | (<priority 1>)
+
+// For update
+<assignments>   ::= <assign> | <assign> , <assignments>
+<assign>        ::= <name> = <priority 1>
